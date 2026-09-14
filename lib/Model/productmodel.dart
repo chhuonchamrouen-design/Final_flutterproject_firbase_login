@@ -11,7 +11,8 @@ class ProductModel {
   String description;
   List<String> storage;
   List<String> color;
-
+  List<String> detail_item;
+  List<String> detail_sp;
   ProductModel({
     required this.category,
     required this.code,
@@ -25,5 +26,7 @@ class ProductModel {
     required this.rate,
     required this.storage,
     required this.view,
+    required this.detail_item,
+    required this.detail_sp,
   });
 }

@@ -6,22 +6,18 @@ part 'shop_state.dart';
 
 class ShopBloc extends Bloc<ShopEvent, ShopState> {
   final Productcontroller product = Productcontroller();
-
   ShopBloc() : super(ShopState()) {
-    //load product 
-    on<LoadProduct>((event, emit) {
-      onProduct(event, emit);
-    });
-    //filter category
-    on<FilterCategory>((event, emit) {
-      onFilterCategory(event, emit);
-    });
-    //selectfavarite of itme 
-    on<ToggleFavorite>((event, emit) {
-      onToggleFavorite(event, emit);
-    });
+    on<LoadProduct>(onProduct);
+    on<FilterCategory>(onFilterCategory);
+    on<ToggleFavorite>(onToggleFavorite);
+    // new handlers
+    on<SelectProduct>(onSelectProduct);
+    on<ClearSelectedProduct>(onClearSelectedProduct);
+    on<AddToCart>(onAddToCart);
+    on<RemoveFromCart>(onRemoveFromCart);
+    on<UpdateCartQuantity>(onUpdateCartQuantity);
   }
-//function for update allproduct and filttercategory 
+  // ---------- existing ----------
   void onProduct(LoadProduct event, Emitter<ShopState> emit) {
     emit(
       state.copy(
@@ -30,8 +26,7 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
       ),
     );
   }
-//function for filter all item 
-//if selexct all that show all item else select by other product is show by on item 
+
   void onFilterCategory(FilterCategory event, Emitter<ShopState> emit) {
     if (event.category == "All") {
       emit(state.copy(filltercategory: state.allproduct));
@@ -42,15 +37,71 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
       emit(state.copy(filltercategory: filtered));
     }
   }
-//fucntion for select go to favarite item 
+
   void onToggleFavorite(ToggleFavorite event, Emitter<ShopState> emit) {
     final isAlreadyFavorite = state.favorites.contains(event.product);
     final updatedFavorites = List<ProductModel>.from(state.favorites);
+
     if (isAlreadyFavorite) {
       updatedFavorites.remove(event.product);
     } else {
       updatedFavorites.add(event.product);
     }
+
     emit(state.copy(favorites: updatedFavorites));
+  }
+
+  // ---------- new ----------
+  void onSelectProduct(SelectProduct event, Emitter<ShopState> emit) {
+    emit(state.copy(selectedProduct: event.product));
+  }
+
+  void onClearSelectedProduct(
+    ClearSelectedProduct event,
+    Emitter<ShopState> emit,
+  ) {
+    emit(state.copy(clearSelected: true));
+  }
+
+  void onAddToCart(AddToCart event, Emitter<ShopState> emit) {
+    final exists = state.cart.any((p) => p.code == event.product.code);
+    if (exists) return; // already in cart
+
+    final updatedCart = List<ProductModel>.from(state.cart)..add(event.product);
+    emit(state.copy(cart: updatedCart));
+  }
+
+  void onRemoveFromCart(RemoveFromCart event, Emitter<ShopState> emit) {
+    final updatedCart = state.cart
+        .where((p) => p.code != event.product.code)
+        .toList();
+    emit(state.copy(cart: updatedCart));
+  }
+
+  void onUpdateCartQuantity(UpdateCartQuantity event, Emitter<ShopState> emit) {
+    final updatedCart = state.cart.map((p) {
+      if (p.code == event.product.code) {
+        // create a new instance with updated quantity
+        return ProductModel(
+          code: p.code,
+          name: p.name,
+          category: p.category,
+          oldprice: p.oldprice,
+          discount: p.discount,
+          image: p.image,
+          quantity: event.quantity < 1 ? 1 : event.quantity,
+          rate: p.rate,
+          view: p.view,
+          description: p.description,
+          storage: p.storage,
+          color: p.color,
+          detail_item: p.detail_item,
+          detail_sp: p.detail_sp,
+        );
+      }
+      return p;
+    }).toList();
+
+    emit(state.copy(cart: updatedCart));
   }
 }

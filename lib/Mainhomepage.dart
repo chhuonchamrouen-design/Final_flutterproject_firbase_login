@@ -10,108 +10,94 @@ class Mainhomepage extends StatefulWidget {
   @override
   State<Mainhomepage> createState() => _MainhomepageState();
 }
-
 class _MainhomepageState extends State<Mainhomepage> {
   int currentpage = 0;
-
   final List<Widget> pages = const [
     Homescreen(),
     Searchscreen(),
-    Cartscreen(),
     Favaritescreen(),
+    CartScreen(),
     Profilescreen(),
   ];
-
+  static const Color _activeColor = Color(0xFF34C759); // green
+  static const Color _inactiveColor = Colors.black45;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       body: pages[currentpage],
-      bottomNavigationBar: SizedBox(
-        height: 90,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.topCenter,
-          children: [
-            // ================= DARK PILL BAR WITH NOTCH =================
-            Positioned(
-              bottom: 20,
-              left: 16,
-              right: 16,
-              child: Container(
-                height: 64,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.only(top: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _navItem(icon: Icons.home_outlined, label: 'Home', index: 0),
+                  _navItem(icon: Icons.search, label: 'Search', index: 1),
+                  _navItem(
+                    icon: Icons.favorite_border,
+                    label: 'Saved',
+                    index: 2,
+                  ),
+                  _navItem(
+                    icon: Icons.shopping_bag_outlined,
+                    label: 'Cart',
+                    index: 3,
+                  ),
+                  _navItem(
+                    icon: Icons.person_outline,
+                    label: 'Account',
+                    index: 4,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              // ---- iOS-style home indicator bar ----
+              Container(
+                width: 120,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _navIcon(icon: Icons.home_outlined, index: 0),
-                    _navIcon(icon: Icons.search, index: 1),
-                    const SizedBox(width: 60), // space for the raised button
-                    _navIcon(icon: Icons.favorite_border, index: 3),
-                    _navIcon(icon: Icons.person_outline, index: 4),
-                  ],
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            // ================= RAISED CENTER BUTTON =================
-            Positioned(
-              top: 0,
-              child: GestureDetector(
-                onTap: () => setState(() => currentpage = 2),
-                child: Container(
-                  width: 68,
-                  height: 68,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF9B6DFF), Color(0xFF6C3CE9)],
-                    ),
-                    border: Border.all(color: Colors.white, width: 4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.deepPurple.withOpacity(0.4),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.shopping_bag_outlined,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _navIcon({required IconData icon, required int index}) {
-    final isSelected = currentpage == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => currentpage = index),
-        behavior: HitTestBehavior.opaque,
-        child: Icon(
-          icon,
-          color: isSelected ? const Color(0xFFFF7A45) : Colors.white70,
-          size: 26,
-        ),
+  Widget _navItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final bool isSelected = currentpage == index;
+    final Color color = isSelected ? _activeColor : _inactiveColor;
+
+    return GestureDetector(
+      onTap: () => setState(() => currentpage = index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ],
       ),
     );
   }

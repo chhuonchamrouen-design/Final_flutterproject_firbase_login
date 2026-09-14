@@ -16,6 +16,18 @@ class Productcontroller {
           "Powerful iPhone with premium design and advanced camera system.",
       storage: ["128GB", "256GB", "512GB"],
       color: ["Natural Titanium", "Blue Titanium", "Black Titanium"],
+      detail_item: [
+        "assets/image/17pm_1.jpg",
+        "assets/image/17pm_2.jpg",
+        "assets/image/17pm_3.jpg",
+        "assets/image/17pm_4.jpg",
+      ],
+      detail_sp: [
+        "6.9-inch Super Retina XDR display",
+        "A19 Pro chip with advanced Neural Engine",
+        "Pro camera system with 48MP main camera",
+        "Titanium design with Action Button",
+      ],
     ),
     ProductModel(
       code: 2,
@@ -30,6 +42,18 @@ class Productcontroller {
       description: "Powerful iPhone with A17 Pro chip and professional camera.",
       storage: ["128GB", "256GB", "512GB"],
       color: ["Natural Titanium", "Blue Titanium", "Black Titanium"],
+      detail_item: [
+        "assets/image/15pro_1.jpg",
+        "assets/image/15pro_2.jpg",
+        "assets/image/15pro_3.jpg",
+        "assets/image/15pro_4.jpg",
+      ],
+      detail_sp: [
+        "6.1-inch Super Retina XDR display",
+        "A17 Pro chip",
+        "Pro camera system (48MP main)",
+        "Titanium design with USB-C",
+      ],
     ),
     ProductModel(
       code: 3,
@@ -44,8 +68,19 @@ class Productcontroller {
       description: "Large display iPhone with excellent battery life.",
       storage: ["128GB", "256GB", "512GB"],
       color: ["Pink", "Blue", "Green"],
+      detail_item: [
+        "assets/image/15plus_1.jpg",
+        "assets/image/15plus_2.jpg",
+        "assets/image/15plus_3.jpg",
+        "assets/image/15plus_4.jpg",
+      ],
+      detail_sp: [
+        "6.7-inch Super Retina XDR display",
+        "A16 Bionic chip",
+        "48MP main camera",
+        "All-day battery life",
+      ],
     ),
-
     ProductModel(
       code: 4,
       name: "Galaxy S24 Ultra",
@@ -59,8 +94,19 @@ class Productcontroller {
       description: "Flagship Samsung phone with 200MP camera and S Pen.",
       storage: ["256GB", "512GB", "1TB"],
       color: ["Black", "Gray", "Violet"],
+      detail_item: [
+        "assets/image/s24u_1.jpg",
+        "assets/image/s24u_2.jpg",
+        "assets/image/s24u_3.jpg",
+        "assets/image/s24u_4.jpg",
+      ],
+      detail_sp: [
+        "6.8-inch Dynamic AMOLED 2X display",
+        "Snapdragon 8 Gen 3 for Galaxy",
+        "200MP main camera + S Pen",
+        "Titanium frame & IP68",
+      ],
     ),
-
     ProductModel(
       code: 5,
       name: "Galaxy S25 ultra",
@@ -75,8 +121,19 @@ class Productcontroller {
           "Samsung flagship with AMOLED display and powerful performance.",
       storage: ["256GB", "512GB", "1TB"],
       color: ["Black", "Violet", "Gray"],
+      detail_item: [
+        "assets/image/s25u_1.jpg",
+        "assets/image/s25u_2.jpg",
+        "assets/image/s25u_3.jpg",
+        "assets/image/s25u_4.jpg",
+      ],
+      detail_sp: [
+        "6.8-inch Dynamic AMOLED 2X",
+        "Latest Snapdragon / Exynos flagship chip",
+        "200MP camera system",
+        "Built-in S Pen support",
+      ],
     ),
-
     ProductModel(
       code: 6,
       name: "Galaxy S26 Ultra",
@@ -90,8 +147,19 @@ class Productcontroller {
       description: "Samsung phone with 200MP camera and built-in S Pen.",
       storage: ["256GB", "512GB", "1TB"],
       color: ["Green", "Black", "Cream"],
+      detail_item: [
+        "assets/image/s26u_1.jpg",
+        "assets/image/s26u_2.jpg",
+        "assets/image/s26u_3.jpg",
+        "assets/image/s26u_4.jpg",
+      ],
+      detail_sp: [
+        "6.9-inch Dynamic AMOLED 2X display",
+        "Next-gen Snapdragon chipset",
+        "200MP camera + advanced AI",
+        "S Pen + Armor Aluminum frame",
+      ],
     ),
-
     ProductModel(
       code: 7,
       name: "Xiaomi 14 Ultra",
@@ -106,8 +174,19 @@ class Productcontroller {
           "Xiaomi flagship with Leica camera and powerful performance.",
       storage: ["256GB", "512GB", "1TB"],
       color: ["Black", "White", "Blue"],
+      detail_item: [
+        "assets/image/xi14_1.jpg",
+        "assets/image/xi14_2.jpg",
+        "assets/image/xi14_3.jpg",
+        "assets/image/xi14_4.jpg",
+      ],
+      detail_sp: [
+        "6.73-inch LTPO AMOLED display",
+        "Snapdragon 8 Gen 3",
+        "Leica optical camera system",
+        "120W HyperCharge support",
+      ],
     ),
-
     ProductModel(
       code: 8,
       name: "Ximi14",
@@ -122,8 +201,19 @@ class Productcontroller {
           "Xiaomi flagship phone with AMOLED display and Leica camera.",
       storage: ["128GB", "256GB", "512GB"],
       color: ["Black", "White", "Green"],
+      detail_item: [
+        "assets/image/xi17_1.jpg",
+        "assets/image/xi17_2.jpg",
+        "assets/image/xi17_3.jpg",
+        "assets/image/xi17_4.jpg",
+      ],
+      detail_sp: [
+        "6.7-inch AMOLED display",
+        "High-performance chipset",
+        "Leica-tuned camera",
+        "Fast charging support",
+      ],
     ),
-
     ProductModel(
       code: 9,
       name: "Redmi",
@@ -137,8 +227,19 @@ class Productcontroller {
       description: "Redmi phone with 200MP camera and AMOLED display.",
       storage: ["128GB", "256GB", "512GB"],
       color: ["Black", "White", "Purple"],
+      detail_item: [
+        "assets/image/redmi_1.jpg",
+        "assets/image/redmi_2.jpg",
+        "assets/image/redmi_3.jpg",
+        "assets/image/redmi_4.jpg",
+      ],
+      detail_sp: [
+        "6.67-inch AMOLED display",
+        "200MP main camera",
+        "Fast charging support",
+        "High refresh rate screen",
+      ],
     ),
-
     ProductModel(
       code: 10,
       name: "OPPO Find X7UT",
@@ -152,8 +253,19 @@ class Productcontroller {
       description: "OPPO flagship with advanced camera system.",
       storage: ["256GB", "512GB", "1TB"],
       color: ["Black", "Blue", "Brown"],
+      detail_item: [
+        "assets/image/findx7_1.jpg",
+        "assets/image/findx7_2.jpg",
+        "assets/image/findx7_3.jpg",
+        "assets/image/findx7_4.jpg",
+      ],
+      detail_sp: [
+        "6.78-inch AMOLED display",
+        "Advanced Hasselblad / OPPO camera",
+        "Flagship chipset",
+        "SuperVOOC fast charging",
+      ],
     ),
-
     ProductModel(
       code: 11,
       name: "OPPO Reno 12P",
@@ -167,8 +279,19 @@ class Productcontroller {
       description: "OPPO phone with stylish design and AI camera features.",
       storage: ["128GB", "256GB", "512GB"],
       color: ["Black", "Silver", "Purple"],
+      detail_item: [
+        "assets/image/reno12_1.jpg",
+        "assets/image/reno12_2.jpg",
+        "assets/image/reno12_3.jpg",
+        "assets/image/reno12_4.jpg",
+      ],
+      detail_sp: [
+        "6.7-inch AMOLED display",
+        "AI portrait camera",
+        "Stylish slim design",
+        "Fast charging support",
+      ],
     ),
-
     ProductModel(
       code: 12,
       name: "OPPO Reno 11",
@@ -182,8 +305,19 @@ class Productcontroller {
       description: "OPPO phone with AMOLED display and fast charging.",
       storage: ["128GB", "256GB", "512GB"],
       color: ["Black", "Green", "Gold"],
+      detail_item: [
+        "assets/image/reno11_1.jpg",
+        "assets/image/reno11_2.jpg",
+        "assets/image/reno11_3.jpg",
+        "assets/image/reno11_4.jpg",
+      ],
+      detail_sp: [
+        "6.7-inch AMOLED display",
+        "Portrait-focused camera",
+        "Fast charging support",
+        "Slim and lightweight design",
+      ],
     ),
-
     ProductModel(
       code: 13,
       name: "vivo X300 Pro",
@@ -197,6 +331,18 @@ class Productcontroller {
       description: "vivo flagship with ZEISS camera and powerful performance.",
       storage: ["256GB", "512GB", "1TB"],
       color: ["Black", "Blue", "White"],
+      detail_item: [
+        "assets/image/x300_1.jpg",
+        "assets/image/x300_2.jpg",
+        "assets/image/x300_3.jpg",
+        "assets/image/x300_4.jpg",
+      ],
+      detail_sp: [
+        "6.78-inch AMOLED display",
+        "ZEISS optics camera system",
+        "Flagship performance chipset",
+        "Fast charging & long battery",
+      ],
     ),
     ProductModel(
       code: 14,
@@ -211,6 +357,18 @@ class Productcontroller {
       description: "vivo phone with ZEISS portrait camera and fast charging.",
       storage: ["128GB", "256GB", "512GB"],
       color: ["Gray", "White", "Purple"],
+      detail_item: [
+        "assets/image/v40_1.jpg",
+        "assets/image/v40_2.jpg",
+        "assets/image/v40_3.jpg",
+        "assets/image/v40_4.jpg",
+      ],
+      detail_sp: [
+        "6.78-inch AMOLED display",
+        "ZEISS portrait camera",
+        "Fast charging support",
+        "Stylish design with premium build",
+      ],
     ),
   ];
 }
