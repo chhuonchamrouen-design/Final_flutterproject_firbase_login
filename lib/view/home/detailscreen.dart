@@ -8,6 +8,8 @@ class ProductDetailScreen extends StatefulWidget {
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
+
+git inti gi
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int quantity = 1;
   int selectedIndex = 0; // 0 = main image, 1.. = detail items
