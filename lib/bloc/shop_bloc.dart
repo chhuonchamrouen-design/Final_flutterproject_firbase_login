@@ -10,14 +10,13 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     on<LoadProduct>(onProduct);
     on<FilterCategory>(onFilterCategory);
     on<ToggleFavorite>(onToggleFavorite);
-    // new handlers
     on<SelectProduct>(onSelectProduct);
     on<ClearSelectedProduct>(onClearSelectedProduct);
     on<AddToCart>(onAddToCart);
     on<RemoveFromCart>(onRemoveFromCart);
     on<UpdateCartQuantity>(onUpdateCartQuantity);
   }
-  // ---------- existing ----------
+
   void onProduct(LoadProduct event, Emitter<ShopState> emit) {
     emit(
       state.copy(
@@ -38,20 +37,19 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     }
   }
 
+  // FIX: compare by product code instead of object identity
   void onToggleFavorite(ToggleFavorite event, Emitter<ShopState> emit) {
-    final isAlreadyFavorite = state.favorites.contains(event.product);
-    final updatedFavorites = List<ProductModel>.from(state.favorites);
+    final isAlreadyFavorite = state.favorites.any(
+      (p) => p.code == event.product.code,
+    );
 
-    if (isAlreadyFavorite) {
-      updatedFavorites.remove(event.product);
-    } else {
-      updatedFavorites.add(event.product);
-    }
+    final updatedFavorites = isAlreadyFavorite
+        ? state.favorites.where((p) => p.code != event.product.code).toList()
+        : [...state.favorites, event.product];
 
     emit(state.copy(favorites: updatedFavorites));
   }
 
-  // ---------- new ----------
   void onSelectProduct(SelectProduct event, Emitter<ShopState> emit) {
     emit(state.copy(selectedProduct: event.product));
   }
@@ -63,11 +61,21 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     emit(state.copy(clearSelected: true));
   }
 
+  // FIX: if the product is already in the cart, increase its quantity
+  // instead of silently ignoring the event.
   void onAddToCart(AddToCart event, Emitter<ShopState> emit) {
-    final exists = state.cart.any((p) => p.code == event.product.code);
-    if (exists) return; // already in cart
+    final updatedCart = List<ProductModel>.from(state.cart);
+    final index = updatedCart.indexWhere((p) => p.code == event.product.code);
 
-    final updatedCart = List<ProductModel>.from(state.cart)..add(event.product);
+    if (index == -1) {
+      updatedCart.add(event.product);
+    } else {
+      final existing = updatedCart[index];
+      updatedCart[index] = existing.copyWith(
+        quantity: existing.quantity + event.product.quantity,
+      );
+    }
+
     emit(state.copy(cart: updatedCart));
   }
 
@@ -81,23 +89,7 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
   void onUpdateCartQuantity(UpdateCartQuantity event, Emitter<ShopState> emit) {
     final updatedCart = state.cart.map((p) {
       if (p.code == event.product.code) {
-        // create a new instance with updated quantity
-        return ProductModel(
-          code: p.code,
-          name: p.name,
-          category: p.category,
-          oldprice: p.oldprice,
-          discount: p.discount,
-          image: p.image,
-          quantity: event.quantity < 1 ? 1 : event.quantity,
-          rate: p.rate,
-          view: p.view,
-          description: p.description,
-          storage: p.storage,
-          color: p.color,
-          detail_item: p.detail_item,
-          detail_sp: p.detail_sp,
-        );
+        return p.copyWith(quantity: event.quantity < 1 ? 1 : event.quantity);
       }
       return p;
     }).toList();

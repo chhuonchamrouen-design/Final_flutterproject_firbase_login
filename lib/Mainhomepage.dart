@@ -4,7 +4,6 @@ import 'package:shop/view/favarite/favaritescreen.dart';
 import 'package:shop/view/home/homescreen.dart';
 import 'package:shop/view/profile/profilescreen.dart';
 import 'package:shop/view/search/searchscreen.dart';
-
 class Mainhomepage extends StatefulWidget {
   const Mainhomepage({super.key});
   @override
@@ -17,7 +16,7 @@ class _MainhomepageState extends State<Mainhomepage> {
     Searchscreen(),
     Favaritescreen(),
     CartScreen(),
-    Profilescreen(),
+    ProfileScreen(),
   ];
   static const Color _activeColor = Color(0xFF34C759); // green
   static const Color _inactiveColor = Colors.black45;

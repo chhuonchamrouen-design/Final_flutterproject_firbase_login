@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shop/Mainhomepage.dart';
-import 'package:shop/aute/signinscreen.dart';
+import 'package:shop/auth/Getstart.dart';
+import 'package:shop/auth/signinscreen.dart';
+import 'package:shop/auth/signupscreen.dart';
 import 'package:shop/bloc/shop_bloc.dart';
+import 'package:shop/view/home/checkoutscreen.dart';
 import 'package:shop/view/home/detailscreen.dart';
 void main() {
   runApp(const MyApp());
@@ -15,7 +18,7 @@ class MyApp extends StatelessWidget {
       providers: [BlocProvider(create: (_) => ShopBloc())],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: const SignInScreen(),
+        home: Mainhomepage(),
       ),
     );
   }

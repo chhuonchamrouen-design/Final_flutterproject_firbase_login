@@ -1,446 +1,589 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:shop/bloc/shop_bloc.dart';
-// // Contact method options — using an enum instead of two bools sharing
-// // one variable, so the two radios are properly mutually exclusive.
-// enum ContactMethod { phoneCall, telegram }
-// class Checkputscreen extends StatefulWidget {
-//   const Checkputscreen({super.key});
-//   @override
-//   State<Checkputscreen> createState() => _CheckputscreenState();
-// }
-// class _CheckputscreenState extends State<Checkputscreen> {
-//   bool selectAddress = false;
-//   bool selectDelivery = false;
-//   ContactMethod? selectedContact;
-//   // ---------- Pink theme palette (visual only, logic unchanged) ----------
-//   static const Color pinkBackground = Color(0xFFF6C6D5);
-//   static const Color pinkCard = Color(0xFFFBE0E8);
-//   static const Color pinkButton = Color(0xFFF0AFC7);
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shop/Model/productmodel.dart';
+import 'package:shop/bloc/shop_bloc.dart'; // adjust path if needed
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: pinkBackground,
-//       appBar: AppBar(
-//         backgroundColor: pinkBackground,
-//         elevation: 0,
-//         leading: IconButton(
-//           onPressed: (){
-//             Get.back();
-//           },
-//           icon: Icon(Icons.arrow_back_ios, size: 22),
-//         ),
-//         title: BlocBuilder<ShopBloc, ShopState>(
-//           builder: (context, state) {
-//             return Text(
-//               "Checkout(${state.cartItem.length})",
-//               style: TextStyle(fontSize: 20, color: Colors.black),
-//             );
-//           },
-//         ),
-//         centerTitle: true,
-//       ),
-//       body: SingleChildScrollView(
-//         child: Padding(
-//           padding: const EdgeInsets.all(8.0),
-//           child: BlocBuilder<ShopBloc, ShopState>(
-//             builder: (context, state) {
-//               return Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text("Order Summary"),
-//                   SizedBox(height: 5),
-//                   SizedBox(
-//                     height: 220,
-//                     child: ListView.builder(
-//                       scrollDirection: Axis.horizontal,
-//                       itemCount: state.cartItem.length,
-//                       itemBuilder: (context, index) {
-//                         final item = state.cartItem[index];
-//                         return Padding(
-//                           padding: const EdgeInsets.all(8.0),
-//                           child: Container(
-//                             width: 150,
-//                             decoration: BoxDecoration(
-//                               color: pinkCard,
-//                               borderRadius: BorderRadius.circular(15),
-//                             ),
-//                             child: Padding(
-//                               padding: const EdgeInsets.all(8.0),
-//                               child: Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                   Center(
-//                                     child: Image.asset(
-//                                       height: 100,
-//                                       width: 100,
-//                                       fit: BoxFit.contain,
-//                                       item.product!.image,
-//                                     ),
-//                                   ),
-//                                   Text(item.product!.name,style: TextStyle(color: Colors.grey,fontSize: 12),),
-//                                   // AppText(
-//                                   //   text: item.product!.name,
-//                                   //   colors: Colors.grey,
-//                                   //   size: 12,
-//                                   // ),
-//                                   // AppText(
-//                                   //   text: "Size: ${item.size}",
-//                                   //   colors: Colors.grey,
-//                                   //   size: 12,
-//                                   // ),
-//                                  Text("Size: ${item.size}",style: TextStyle(color: Colors.grey,fontSize: 16),),
-//                                   // AppText(
-//                                   //   text: "Color: ${item.color}",
-//                                   //   colors: Colors.grey,
-//                                   //   size: 12,
-//                                   // ),
-//                                   Text("Size: ${item.color}",style: TextStyle(color: Colors.grey,fontSize: 16),),
-//                                   Row(
-//                                     mainAxisAlignment:
-//                                         MainAxisAlignment.spaceBetween,
-//                                     children: [
-//                                       // AppText(
-//                                       //   text: "Quatity:${item.quantity}",
-//                                       //   colors: Colors.grey,
-//                                       //   size: 12,
-//                                       // ),
-//                                     Text("Quatity:${item.quantity}",style: TextStyle(color: Colors.grey,fontSize: 16),),
-//                                       // AppText(
-//                                       //   text: "Price:\$${item.product!.price}",
-//                                       //   colors: Colors.grey,
-//                                       //   size: 12,
-//                                       // ),
-//                                                                           Text("Price:\$${item.product!.price}",style: TextStyle(color: Colors.grey,fontSize: 16),),
+class CheckoutScreen extends StatefulWidget {
+  const CheckoutScreen({super.key});
+  @override
+  State<CheckoutScreen> createState() => _CheckoutScreenState();
+}
+class _CheckoutScreenState extends State<CheckoutScreen> {
+  // ---------- palette (same as cart) ----------
+  static const Color pageBackground = Color(0xFFFFFFFF);
+  static const Color rowBorder = Color(0xFFE6E6E6);
+  static const Color greenButton = Color(0xFF3ECD5E);
+  static const Color errorRed = Color(0xFFFF3B6B);
 
-//                                     ],
-//                                   ),
-//                                 ],
-//                               ),
-//                             ),
-//                           ),
-//                         );
-//                       },
-//                     ),
-//                   ),
-//                   SizedBox(height: 5),
-//                   AppText(text: "Devilery Address"),
-//                   SizedBox(height: 8),
-//                   Container(
-//                     height: 175,
-//                     width: double.infinity,
-//                     decoration: BoxDecoration(
-//                       color: pinkCard,
-//                       borderRadius: BorderRadius.circular(15),
-//                     ),
-//                     child: Column(
-//                       mainAxisAlignment: MainAxisAlignment.start,
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Padding(
-//                           padding: const EdgeInsets.only(left: 34),
-//                           child: AppText(
-//                             text: "Kelvin",
-//                             colors: Colors.grey,
-//                             size: 16,
-//                           ),
-//                         ),
-//                         Row(
-//                           children: [
-//                             Radio<bool>(
-//                               value: true,
-//                               groupValue: selectAddress,
-//                               onChanged: (value) {
-//                                 setState(() {
-//                                   selectAddress = value!;
-//                                 });
-//                               },
-//                             ),
-//                             Padding(
-//                               padding: const EdgeInsets.only(left: 1),
-//                               child: AppText(
-//                                 text: "099765487654",
-//                                 size: 16,
-//                                 colors: Colors.grey,
-//                               ),
-//                             ),
-//                             Spacer(),
-//                             IconButton(
-//                               onPressed: () {},
-//                               icon: Icon(Icons.arrow_forward_ios, size: 20),
-//                             ),
-//                           ],
-//                         ),
-//                         Padding(
-//                           padding: const EdgeInsets.only(left: 34),
-//                           child: AppText(
-//                             text: "Phnom penh",
-//                             size: 16,
-//                             colors: Colors.grey,
-//                           ),
-//                         ),
-//                         Divider(color: Colors.black12),
-//                         Row(
-//                           children: [
-//                             Radio<bool>(
-//                               value: true,
-//                               groupValue: selectDelivery,
-//                               onChanged: (value) {
-//                                 setState(() {
-//                                   selectDelivery = value!;
-//                                 });
-//                               },
-//                             ),
-//                             ClipRRect(
-//                               borderRadius: BorderRadiusGeometry.circular(20),
-//                               child: Image.asset(
-//                                 "assets/image/brazilyellow.jpg",
-//                                 height: 50,
-//                                 width: 50,
-//                               ),
-//                             ),
-//                             Column(
-//                               mainAxisAlignment: MainAxisAlignment.start,
-//                               crossAxisAlignment: CrossAxisAlignment.start,
-//                               children: [
-//                                 AppText(
-//                                   text: "Delivery",
-//                                   size: 16,
-//                                   colors: Colors.grey,
-//                                 ),
-//                                 AppText(
-//                                   text: " 1-2 days",
-//                                   size: 16,
-//                                   colors: Colors.grey,
-//                                 ),
-//                               ],
-//                             ),
-//                             Spacer(),
-//                             AppText(
-//                               text: "Change",
-//                               size: 16,
-//                               colors: Colors.grey,
-//                             ),
-//                             IconButton(
-//                               onPressed: () {},
-//                               icon: Icon(Icons.arrow_forward_ios, size: 20),
-//                             ),
-//                           ],
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                   SizedBox(height: 5),
-//                   AppText(text: "Prefarred Contact Line"),
-//                   SizedBox(height: 5),
-//                   Row(
-//                     children: [
-//                       Radio<ContactMethod>(
-//                         value: ContactMethod.phoneCall,
-//                         groupValue: selectedContact,
-//                         onChanged: (value) {
-//                           setState(() {
-//                             selectedContact = value;
-//                           });
-//                         },
-//                       ),
-//                       Container(
-//                         height: 40,
-//                         padding: EdgeInsets.all(10),
-//                         decoration: BoxDecoration(
-//                           color: pinkCard,
-//                           borderRadius: BorderRadius.circular(10),
-//                         ),
-//                         child: Row(
-//                           children: [
-//                             Icon(Icons.phone, size: 22),
-//                             SizedBox(width: 3),
-//                             AppText(
-//                               text: "Phone call",
-//                               size: 16,
-//                               colors: Colors.grey,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                       Radio<ContactMethod>(
-//                         value: ContactMethod.telegram,
-//                         groupValue: selectedContact,
-//                         onChanged: (value) {
-//                           setState(() {
-//                             selectedContact = value;
-//                           });
-//                         },
-//                       ),
-//                       Container(
-//                         height: 40,
-//                         padding: EdgeInsets.all(10),
-//                         decoration: BoxDecoration(
-//                           color: pinkCard,
-//                           borderRadius: BorderRadius.circular(10),
-//                         ),
-//                         child: Row(
-//                           children: [
-//                             Icon(Icons.telegram_rounded, size: 22),
-//                             SizedBox(width: 3),
-//                             AppText(
-//                               text: "Telegram",
-//                               size: 16,
-//                               colors: Colors.grey,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   SizedBox(height: 10),
-//                   Container(
-//                     height: 50,
-//                     width: double.infinity,
-//                     decoration: BoxDecoration(
-//                       color: pinkCard,
-//                       borderRadius: BorderRadius.circular(10),
-//                     ),
-//                     child: Padding(
-//                       padding: const EdgeInsets.all(3.0),
-//                       child: TextField(
-//                         decoration: InputDecoration(
-//                           hintText: "Phone Number",
-//                           hintStyle: TextStyle(color: Colors.grey),
-//                           border: InputBorder.none,
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-//                   SizedBox(height: 10),
-//                   AppText(text: "Payment Method"),
-//                   SizedBox(height: 10),
-//                   Container(
-//                     height: 50,
-//                     width: double.infinity,
-//                     decoration: BoxDecoration(
-//                       color: pinkCard,
-//                       borderRadius: BorderRadius.circular(10),
-//                     ),
-//                     child: Padding(
-//                       padding: const EdgeInsets.all(8.0),
-//                       child: Row(
-//                         children: [
-//                           Icon(Icons.payment, size: 25),
-//                           SizedBox(width: 10),
-//                           AppText(
-//                             text: "Select a mayment method",
-//                             colors: Colors.grey,
-//                             size: 16,
-//                           ),
-//                           Spacer(),
-//                           IconButton(
-//                             onPressed: () {},
-//                             icon: Icon(Icons.arrow_forward_ios, size: 22),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                   ),
-//                   SizedBox(height: 10),
-//                   AppText(text: "Price Summary"),
-//                   SizedBox(height: 10),
-//                   Container(
-//                     height: 125,
-//                     width: double.infinity,
-//                     decoration: BoxDecoration(
-//                       color: pinkCard,
-//                       borderRadius: BorderRadius.circular(15),
-//                     ),
-//                     child: Padding(
-//                       padding: const EdgeInsets.all(8.0),
-//                       child: Column(
-//                         children: [
-//                           Row(
-//                             children: [
-//                               AppText(
-//                                 text: "Total",
-//                                 size: 18,
-//                                 colors: Colors.grey,
-//                               ),
-//                               Spacer(),
-//                               AppText(
-//                                 text: "\$${state.gettotal.toStringAsFixed(2)}",
-//                               ),
-//                             ],
-//                           ),
-//                           Row(
-//                             children: [
-//                               AppText(
-//                                 text: "Discount",
-//                                 size: 18,
-//                                 colors: Colors.grey,
-//                               ),
-//                               Spacer(),
-//                               AppText(text: "\$${state.dis()}"),
-//                             ],
-//                           ),
-//                           Row(
-//                             children: [
-//                               AppText(
-//                                 text: "Deleviry",
-//                                 size: 18,
-//                                 colors: Colors.grey,
-//                               ),
-//                               Spacer(),
-//                               AppText(text: "\$${state.devilery.toString()}"),
-//                             ],
-//                           ),
-//                           Row(
-//                             children: [
-//                               AppText(
-//                                 text: "Subtotal ",
-//                                 size: 18,
-//                                 colors: Colors.grey,
-//                               ),
-//                               Spacer(),
-//                               AppText(
-//                                 text: "\$${state.subtoal().toStringAsFixed(2)}",
-//                               ),
-//                             ],
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                   ),
-//                 ],
-//               );
-//             },
-//           ),
-//         ),
-//       ),
-//       bottomNavigationBar: Padding(
-//         padding: EdgeInsets.all(10),
-//         child: SizedBox(
-//           height: 50,
-//           width: double.infinity,
-//           child: ElevatedButton(
-//             style: ElevatedButton.styleFrom(
-//               backgroundColor: pinkButton,
-//               shape: RoundedRectangleBorder(
-//                 borderRadius: BorderRadius.circular(20),
-//               ),
-//             ),
-//             onPressed: (){
-//               // Get.to(Checkputscreen());
-//             },
-//             child: const Text(
-//             "Checkout",
-//               style: TextStyle(
-//                 fontSize: 20,
-//                 color: Colors.black,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
+  // ---------- options (edit these lists to add more) ----------
+  static const List<String> _locations = [
+    'Phnom Penh',
+    'Siem Reap',
+    'Battambang',
+    'Sihanoukville',
+    'Kampot',
+  ];
+
+  static const List<_Option> _deliveries = [
+    _Option(
+      title: 'J&T Express',
+      subtitle: '1-2 Day',
+      badge: 'J&T',
+      color: Color(0xFFE60012),
+      rounded: false,
+    ),
+    _Option(
+      title: 'Standard delivery',
+      subtitle: '3-5 Day',
+      icon: Icons.local_shipping_outlined,
+      color: Color(0xFF546E7A),
+    ),
+    _Option(
+      title: 'Store pickup',
+      subtitle: 'Same day',
+      icon: Icons.storefront_outlined,
+      color: Color(0xFF3ECD5E),
+    ),
+  ];
+
+  static const List<_Option> _payments = [
+    _Option(title: 'ABA', badge: 'ABA', color: Color(0xFF005E7B)),
+    _Option(title: 'ACLEDA', badge: 'AC', color: Color(0xFF1B4F9C)),
+    _Option(title: 'Wing', badge: 'W', color: Color(0xFF7AC143)),
+    _Option(
+      title: 'Cash on delivery',
+      icon: Icons.payments_outlined,
+      color: Color(0xFF546E7A),
+    ),
+  ];
+
+  String _location = 'Phnom Penh';
+  int _delivery = 0;
+  int _payment = 0;
+  final TextEditingController _contactCtrl = TextEditingController();
+  String? _contactError;
+
+  @override
+  void dispose() {
+    _contactCtrl.dispose();
+    super.dispose();
+  }
+
+  // ---------- generic "Change" bottom sheet ----------
+  Future<void> _pick({
+    required String title,
+    required int selected,
+    required List<_Option> options,
+    required ValueChanged<int> onSelected,
+  }) {
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...List.generate(options.length, (i) {
+                final o = options[i];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: _leading(o),
+                  title: Text(
+                    o.title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: o.subtitle == null ? null : Text(o.subtitle!),
+                  trailing: Icon(
+                    i == selected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: i == selected ? greenButton : Colors.black38,
+                  ),
+                  onTap: () {
+                    onSelected(i);
+                    Navigator.pop(sheetContext);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _pickLocation() {
+    _pick(
+      title: 'Delivery location',
+      selected: _locations.indexOf(_location),
+      options: _locations
+          .map(
+            (l) => _Option(
+              title: l,
+              icon: Icons.location_on_outlined,
+              color: Colors.black87,
+            ),
+          )
+          .toList(),
+      onSelected: (i) => setState(() => _location = _locations[i]),
+    );
+  }
+
+  // ---------- Confirm order ----------
+  void _confirm(BuildContext context, List<ProductModel> items) {
+    if (_contactCtrl.text.trim().isEmpty) {
+      setState(() => _contactError = 'Please enter your phone or Telegram');
+      return;
+    }
+    setState(() => _contactError = null);
+
+    final bloc = context.read<ShopBloc>();
+    // clear the cart (no ClearCart event in the bloc, remove each item)
+    for (final item in items) {
+      bloc.add(RemoveFromCart(item));
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            const CircleAvatar(
+              radius: 32,
+              backgroundColor: greenButton,
+              child: Icon(Icons.check, color: Colors.white, size: 36),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Order placed!',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Thank you for your order.\nWe will contact you soon.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: greenButton,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  'Back to home',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ShopBloc, ShopState>(
+      builder: (context, state) {
+        final List<ProductModel> items = state.cart;
+        final double total = items.fold(
+          0,
+          (sum, p) => sum + (p.oldprice * p.quantity),
+        );
+
+        return Scaffold(
+          backgroundColor: pageBackground,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // ---------- Top bar ----------
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.black,
+                          size: 30,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Checkout (${items.length})',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 30), // balances the back icon
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: items.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Your cart is empty',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // ---------- Summary order ----------
+                              _label('Summary order'),
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                height: 138,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: items.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(width: 10),
+                                  itemBuilder: (_, i) => _summaryCard(items[i]),
+                                ),
+                              ),
+
+                              // ---------- Delivery location ----------
+                              const SizedBox(height: 20),
+                              _label('Delivery Location'),
+                              const SizedBox(height: 8),
+                              _row(
+                                leading: const Icon(
+                                  Icons.location_on,
+                                  size: 20,
+                                  color: Colors.black,
+                                ),
+                                title: _location,
+                                onChange: _pickLocation,
+                              ),
+
+                              // ---------- Method of delivery ----------
+                              const SizedBox(height: 20),
+                              _label('Method of Delivery'),
+                              const SizedBox(height: 8),
+                              _row(
+                                leading: _leading(_deliveries[_delivery]),
+                                title: _location,
+                                subtitle: _deliveries[_delivery].subtitle,
+                                onChange: () => _pick(
+                                  title: 'Method of delivery',
+                                  selected: _delivery,
+                                  options: _deliveries,
+                                  onSelected: (i) =>
+                                      setState(() => _delivery = i),
+                                ),
+                              ),
+
+                              // ---------- Preferred contact line ----------
+                              const SizedBox(height: 20),
+                              _label('Preferred Contact Line'),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _contactCtrl,
+                                keyboardType: TextInputType.text,
+                                onChanged: (_) {
+                                  if (_contactError != null) {
+                                    setState(() => _contactError = null);
+                                  }
+                                },
+                                decoration: InputDecoration(
+                                  hintText: 'Phone number or Telegram',
+                                  hintStyle: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.black38,
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.phone_outlined,
+                                    size: 20,
+                                    color: Colors.black54,
+                                  ),
+                                  errorText: _contactError,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: rowBorder,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: greenButton,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: errorRed,
+                                    ),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: errorRed,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // ---------- Payment method ----------
+                              const SizedBox(height: 20),
+                              _label('Payment Method'),
+                              const SizedBox(height: 8),
+                              _row(
+                                leading: _leading(_payments[_payment]),
+                                title: _payments[_payment].title,
+                                onChange: () => _pick(
+                                  title: 'Payment method',
+                                  selected: _payment,
+                                  options: _payments,
+                                  onSelected: (i) =>
+                                      setState(() => _payment = i),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
+
+                // ---------- Confirm button ----------
+                if (items.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(48, 8, 48, 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: () => _confirm(context, items),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: greenButton,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(27),
+                          ),
+                        ),
+                        child: Text(
+                          'Confirm Order \$${total.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ---------- Widgets ----------
+  Widget _label(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        color: Colors.black,
+      ),
+    );
+  }
+
+  // Small product card in the horizontal "Summary order" list
+  Widget _summaryCard(ProductModel p) {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: rowBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 58,
+            width: double.infinity,
+            child: Image.asset(
+              p.image,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.image_not_supported, color: Colors.grey),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            p.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+          Text(
+            'colors: ${p.color.isNotEmpty ? p.color : '-'}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11),
+          ),
+          Text('Qty: ${p.quantity}', style: const TextStyle(fontSize: 11)),
+          Text(
+            'Price: \$${p.oldprice.toStringAsFixed(2)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Bordered row with "Change" on the right
+  Widget _row({
+    required Widget leading,
+    required String title,
+    String? subtitle,
+    required VoidCallback onChange,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: rowBorder),
+      ),
+      child: Row(
+        children: [
+          leading,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13),
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.black54),
+                  ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: onChange,
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Text('Change', style: TextStyle(fontSize: 13)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Logo-style badge (J&T, ABA...) or icon for an option
+  Widget _leading(_Option o) {
+    if (o.badge != null) {
+      return Container(
+        width: o.rounded ? 30 : 34,
+        height: o.rounded ? 30 : 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: o.color,
+          shape: o.rounded ? BoxShape.circle : BoxShape.rectangle,
+          borderRadius: o.rounded ? null : BorderRadius.circular(4),
+        ),
+        child: Text(
+          o.badge!,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: o.rounded ? 9 : 11,
+            fontWeight: FontWeight.w800,
+            fontStyle: o.rounded ? FontStyle.normal : FontStyle.italic,
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      width: 30,
+      child: Icon(o.icon ?? Icons.circle, color: o.color, size: 22),
+    );
+  }
+}
+class _Option {
+  final String title;
+  final String? subtitle;
+  final String? badge; // short text logo
+  final IconData? icon;
+  final Color color;
+  final bool rounded; // true = circle badge (ABA), false = square (J&T)
+  const _Option({
+    required this.title,
+    this.subtitle,
+    this.badge,
+    this.icon,
+    this.color = Colors.black87,
+    this.rounded = true,
+  });
+}

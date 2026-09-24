@@ -2,14 +2,131 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shop/Model/productmodel.dart';
 import 'package:shop/bloc/shop_bloc.dart'; // adjust path if needed
+import 'package:shop/view/home/checkoutscreen.dart'; // adjust to your CheckoutScreen file path
+
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
-  // ---------- Pink theme palette (matches the rest of the app) ----------
-  static const Color pinkBackground = Color(0xFFF6C6D5);
-  static const Color pinkCard = Color(0xFFF9D2DE);
-  static const Color pinkSummary = Color(0xFFFBC7D9);
-  static const Color pinkButton = Color(0xFFF0AFC7);
-  static const Color discountRed = Color(0xFFEE5A8A);
+  // ---------- White/green theme palette (matches the rest of the app) ----------
+  static const Color pageBackground = Color(0xFFFFFFFF);
+  static const Color cardBorder = Color(0xFFECECEC);
+  static const Color summaryBackground = Color(0xFFFFFFFF);
+  static const Color checkoutButton = Color(0xFF3ECD5E);
+  static const Color discountRed = Color(0xFFFF3B6B);
+
+  // ---------- Go back to the home screen ----------
+  // Pops every screen until the first route (your home screen).
+  // If home is NOT the first route in your app, replace this with:
+  // Navigator.pushAndRemoveUntil(
+  //   context,
+  //   MaterialPageRoute(builder: (_) => const HomeScreen()),
+  //   (route) => false,
+  // );
+  void _goHome(BuildContext context) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  // ---------- "Are you sure?" bottom sheet ----------
+  void _confirmDelete(BuildContext context, ProductModel item) {
+    final bloc = context.read<ShopBloc>();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Icon(Icons.delete_outline, size: 40, color: discountRed),
+                const SizedBox(height: 12),
+                const Text(
+                  'Are you sure you want to delete this item?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  item.name,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    // Cancel
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: Colors.black26),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Delete
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          bloc.add(RemoveFromCart(item));
+                          Navigator.pop(sheetContext);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: discountRed,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ShopBloc, ShopState>(
@@ -24,8 +141,9 @@ class CartScreen extends StatelessWidget {
         const double delivery = 1.99;
         const double discount = 2.99;
         final double subtotal = total + delivery - discount;
+
         return Scaffold(
-          backgroundColor: pinkBackground,
+          backgroundColor: pageBackground,
           body: SafeArea(
             child: Column(
               children: [
@@ -38,7 +156,7 @@ class CartScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => _goHome(context),
                         child: const Icon(
                           Icons.arrow_back,
                           color: Colors.black,
@@ -55,11 +173,14 @@ class CartScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 24), // balances the back icon
+                      const Icon(
+                        Icons.notifications_none_rounded,
+                        color: Colors.black,
+                        size: 28,
+                      ),
                     ],
                   ),
                 ),
-
                 // ---------- Cart items list ----------
                 Expanded(
                   child: cartItems.isEmpty
@@ -79,44 +200,33 @@ class CartScreen extends StatelessWidget {
                             final item = cartItems[index];
                             return _CartItemCard(
                               product: item,
-                              cardColor: pinkCard,
-                              onRemove: () {
-                                context
-                                    .read<ShopBloc>()
-                                    .add(RemoveFromCart(item));
-                              },
+                              cardColor: Colors.white,
+                              // X icon -> ask first, then delete
+                              onRemove: () => _confirmDelete(context, item),
                               onIncrement: () {
                                 context.read<ShopBloc>().add(
-                                      UpdateCartQuantity(
-                                        item,
-                                        item.quantity + 1,
-                                      ),
-                                    );
+                                  UpdateCartQuantity(item, item.quantity + 1),
+                                );
                               },
                               onDecrement: () {
                                 if (item.quantity > 1) {
                                   context.read<ShopBloc>().add(
-                                        UpdateCartQuantity(
-                                          item,
-                                          item.quantity - 1,
-                                        ),
-                                      );
+                                    UpdateCartQuantity(item, item.quantity - 1),
+                                  );
                                 }
                               },
                             );
                           },
                         ),
                 ),
-
                 // ---------- Summary + Checkout ----------
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                   decoration: const BoxDecoration(
-                    color: pinkSummary,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(28),
-                      topRight: Radius.circular(28),
+                    color: summaryBackground,
+                    border: Border(
+                      top: BorderSide(color: cardBorder, width: 1),
                     ),
                   ),
                   child: Column(
@@ -134,7 +244,7 @@ class CartScreen extends StatelessWidget {
                         '\$${discount.toStringAsFixed(2)}',
                       ),
                       const SizedBox(height: 14),
-                      const Divider(color: Colors.black26, height: 1),
+                      const Divider(color: Colors.black12, height: 1),
                       const SizedBox(height: 14),
                       _summaryRow(
                         'Subtotal',
@@ -146,11 +256,22 @@ class CartScreen extends StatelessWidget {
                       SizedBox(
                         height: 52,
                         child: ElevatedButton(
-                          onPressed: () {
-                            // Navigate to checkout flow
-                          },
+                          onPressed: cartItems.isEmpty
+                              ? null
+                              : () {
+                                  final bloc = context.read<ShopBloc>();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BlocProvider.value(
+                                        value: bloc,
+                                        child: const CheckoutScreen(),
+                                      ),
+                                    ),
+                                  );
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: pinkButton,
+                            backgroundColor: checkoutButton,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(26),
@@ -161,7 +282,7 @@ class CartScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Colors.black,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -214,7 +335,6 @@ class _CartItemCard extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
-
   const _CartItemCard({
     required this.product,
     required this.cardColor,
@@ -231,6 +351,7 @@ class _CartItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: CartScreen.cardBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,40 +359,54 @@ class _CartItemCard extends StatelessWidget {
           // Product image
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
-            child: Container(
-              width: 72,
-              height: 72,
-              color: Colors.white,
+            child: SizedBox(
+              width: 82,
+              height: 82,
               child: Image.asset(
                 product.image,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.image_not_supported,
-                  color: Colors.grey,
-                ),
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.image_not_supported, color: Colors.grey),
               ),
             ),
           ),
           const SizedBox(width: 12),
-
-          // Name / color / qty / price
+          // Name row (with X), color, qty, and price/stepper row
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  product.name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        product.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: onRemove,
+                      child: const Icon(
+                        Icons.close,
+                        size: 18,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
+                // full color name (was product.color[0] = first letter only)
                 Text(
-                  'Colors : ${product.color.isNotEmpty ? product.color[0] : '-'}',
+                  'Colors : ${product.color.isNotEmpty ? product.color : '-'}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -287,53 +422,49 @@ class _CartItemCard extends StatelessWidget {
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '\$${product.oldprice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '\$${product.oldprice.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.black26),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _stepButton(Icons.remove, onDecrement),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              '${product.quantity}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          _stepButton(Icons.add, onIncrement),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-
-          // Remove (X) + stepper
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              GestureDetector(
-                onTap: onRemove,
-                child: const Icon(Icons.close, size: 18, color: Colors.black87),
-              ),
-              const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _stepButton(Icons.remove, onDecrement),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '${product.quantity}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    _stepButton(Icons.add, onIncrement),
-                  ],
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -346,11 +477,8 @@ class _CartItemCard extends StatelessWidget {
       child: Container(
         width: 20,
         height: 20,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.black26),
-        ),
-        child: Icon(icon, size: 12, color: Colors.black87),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 14, color: Colors.black87),
       ),
     );
   }

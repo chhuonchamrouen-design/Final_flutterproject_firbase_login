@@ -2,46 +2,56 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shop/Model/productmodel.dart';
 import 'package:shop/bloc/shop_bloc.dart'; // adjust path if needed
+import 'package:shop/view/cart/cartscreen.dart'; // adjust to your CartScreen file path
+
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key});
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
+
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int quantity = 1;
-  int selectedThumbnail = 0;
-  int selectedColor = 0;
-  String? selectedStorage;
-  // ---------- Pink theme palette (visual only, matches the design) ----------
-  static const Color pinkBackground = Color(0xFFF6C6D5);
-  static const Color pinkPill = Color(0xFFFBE0E8);
-  static const Color pinkButton = Color(0xFFFBC7D9);
-  static const Color pinkAccent = Color(0xFFEE5A8A);
+  int selectedIndex = 0; // 0 = main image, 1.. = detail items
+  static const Color greyBackground = Color(0xFFFFFFFF);
+  static const Color greyPill = Color(0xFFEDEDED);
+  static const Color greenButton = Color(0xFF3ECD5E);
+  static const Color greenAccent = Color(0xFF3ECD5E);
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ShopBloc, ShopState>(
+      buildWhen: (previous, current) => current.selectedProduct != null,
       builder: (context, state) {
         final ProductModel? product = state.selectedProduct;
-
         if (product == null) {
           return const Scaffold(
             body: Center(child: Text('No product selected')),
           );
         }
-        // set default storage the first time
-        selectedStorage ??= product.storage.isNotEmpty
-            ? product.storage[0]
-            : null;
-        // calculate price
+        final bool isFavorite = state.favorites.any(
+          (p) => p.code == product.code,
+        );
+        // all images: main image first, then every detail item
+        final List<String> allImages = [product.image, ...product.detail_item];
+        final int currentIndex = selectedIndex < allImages.length
+            ? selectedIndex
+            : 0;
+        final String mainImage = allImages[currentIndex];
         final double discountAmount = product.oldprice * product.discount / 100;
         final double newPrice = product.oldprice - discountAmount;
+
+        void goToImage(int index) {
+          setState(() => selectedIndex = index);
+        }
+
         return Scaffold(
-          backgroundColor: pinkBackground,
+          backgroundColor: greyBackground,
           body: SafeArea(
+            bottom: false,
             child: SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ---------- Top bar ----------
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -54,75 +64,123 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Icons.arrow_back,
                           () => Navigator.pop(context),
                         ),
-                        // Favorite logic kept exactly as-is; icon/style
-                        // updated only to match the pink design (cart look).
-                        _circleIconButton(
-                          state.favorites.any((p) => p.code == product.code)
-                              ? Icons.favorite
-                              : Icons.shopping_cart_outlined,
-                          () {
-                            context.read<ShopBloc>().add(
-                              ToggleFavorite(product),
-                            );
-                          },
-                          color:
-                              state.favorites.any((p) => p.code == product.code)
-                              ? Colors.red
-                              : Colors.black87,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _circleIconButton(
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              () => context.read<ShopBloc>().add(
+                                ToggleFavorite(product),
+                              ),
+                              color: isFavorite ? Colors.red : Colors.black87,
+                            ),
+                            const SizedBox(width: 4),
+                            _cartButton(context),
+                          ],
                         ),
                       ],
                     ),
                   ),
 
-                  // ---------- Main Image ----------
+                  // ---------- Main image with arrows (radius 20) ----------
                   SizedBox(
-                    height: 300,
+                    height: 280,
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      margin: const EdgeInsets.symmetric(horizontal: 30),
                       width: double.infinity,
-                      child: Image.asset(
-                        product.detail_item.isNotEmpty &&
-                                selectedThumbnail < product.detail_item.length
-                            ? product.detail_item[selectedThumbnail]
-                            : product.image,
-                        fit: BoxFit.contain,
+                      clipBehavior: Clip.antiAlias, // clips image to radius 20
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Center(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Hero(
+                                tag: 'phone_${product.code}',
+                                child: Image.asset(
+                                  mainImage,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.image_not_supported,
+                                    color: Colors.grey,
+                                    size: 60,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Back arrow (left)
+                          if (currentIndex > 0)
+                            Positioned(
+                              left: 8,
+                              top: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: _arrowButton(
+                                  Icons.arrow_back_ios_new,
+                                  () => goToImage(currentIndex - 1),
+                                ),
+                              ),
+                            ),
+
+                          // Forward arrow (right)
+                          if (currentIndex < allImages.length - 1)
+                            Positioned(
+                              right: 8,
+                              top: 0,
+                              bottom: 0,
+                              child: Center(
+                                child: _arrowButton(
+                                  Icons.arrow_forward_ios,
+                                  () => goToImage(currentIndex + 1),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
 
-                  const SizedBox(height: 12),
-
-                  // ---------- Thumbnails (detail_item) ----------
-                  if (product.detail_item.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(product.detail_item.length, (
-                          index,
-                        ) {
-                          final bool isSelected = selectedThumbnail == index;
+                  // ---------- Thumbnails (main image + all detail items) ----------
+                  if (allImages.length > 1)
+                    SizedBox(
+                      height: 64,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 2,
+                        ),
+                        itemCount: allImages.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final bool isSelected = currentIndex == index;
                           return GestureDetector(
-                            onTap: () {
-                              setState(() => selectedThumbnail = index);
-                            },
+                            onTap: () => goToImage(index),
                             child: Container(
-                              width: 64,
-                              height: 64,
+                              width: 60,
+                              height: 60,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(16),
                                 color: Colors.white,
                                 border: Border.all(
                                   color: isSelected
-                                      ? Colors.black
-                                      : Colors.white,
+                                      ? greenAccent
+                                      : const Color(0xFFE3E3E3),
                                   width: 2,
                                 ),
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(14),
                                 child: Image.asset(
-                                  product.detail_item[index],
+                                  allImages[index],
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => const Icon(
                                     Icons.image_not_supported,
@@ -132,79 +190,87 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             ),
                           );
-                        }),
+                        },
                       ),
                     ),
+                  const SizedBox(height: 20),
 
-                  const SizedBox(height: 16),
-
-                  // ---------- Name + Quantity pill ----------
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        children: [
-                          const CircleAvatar(
-                            radius: 14,
-                            backgroundColor: Colors.black,
-                            child: Icon(
-                              Icons.phone_iphone,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              product.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          _qtyButton(Icons.remove, () {
-                            if (quantity > 1) setState(() => quantity--);
-                          }),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            child: Text(
-                              '$quantity',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          _qtyButton(Icons.add, () {
-                            setState(() => quantity++);
-                          }),
-                        ],
+                  // ---------- Bottom card ----------
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: greyPill,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(36),
+                        topRight: Radius.circular(36),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // ---------- Details (sit directly on the pink background) ----------
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Name + Quantity
+                        Row(
+                          children: [
+                            const CircleAvatar(
+                              radius: 13,
+                              backgroundColor: Colors.black,
+                              child: Icon(
+                                Icons.apple,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                product.name,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.black26),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _qtyButton(Icons.remove, () {
+                                    if (quantity > 1) {
+                                      setState(() => quantity--);
+                                    }
+                                  }),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    child: Text(
+                                      '$quantity',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  _qtyButton(Icons.add, () {
+                                    setState(() => quantity++);
+                                  }),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
                         // Rating + Views
                         Row(
                           children: [
@@ -218,9 +284,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                             const SizedBox(width: 6),
                             const Icon(
-                              Icons.star,
+                              Icons.star_border,
                               size: 20,
-                              color: Colors.amber,
+                              color: Colors.black87,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -232,7 +298,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 10),
 
                         // Price
@@ -279,7 +344,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                         const SizedBox(height: 16),
 
-                        // Storage + Colors
+                        // ---------- Storage + Color ----------
                         Row(
                           children: [
                             const Text(
@@ -291,74 +356,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: selectedStorage,
-                                  isDense: true,
-                                  items: product.storage
-                                      .map(
-                                        (s) => DropdownMenuItem(
-                                          value: s,
-                                          child: Text(
-                                            s,
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      setState(() => selectedStorage = value);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
+                            _valueChip(product.storage),
                             const SizedBox(width: 16),
-                            const Text(
-                              'Colors',
-                              style: TextStyle(
+                            Text(
+                              'colors: ${product.color}',
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            ...List.generate(product.color.length, (index) {
-                              final bool isSelected = selectedColor == index;
-                              return GestureDetector(
-                                onTap: () =>
-                                    setState(() => selectedColor = index),
-                                child: Container(
-                                  margin: const EdgeInsets.only(right: 6),
-                                  width: 22,
-                                  height: 22,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color:
-                                        Colors.primaries[index %
-                                            Colors.primaries.length],
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? Colors.black
-                                          : Colors.white,
-                                      width: isSelected ? 2 : 1,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
                           ],
                         ),
 
@@ -421,41 +428,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
           // ---------- Bottom Buttons ----------
           bottomNavigationBar: SafeArea(
+            top: false,
             child: Container(
-              color: pinkBackground,
+              color: greyPill,
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: ElevatedButton(
                       onPressed: () {
-                        // add to cart with current quantity
-                        final productWithQty = ProductModel(
-                          code: product.code,
-                          name: product.name,
-                          category: product.category,
-                          oldprice: product.oldprice,
-                          discount: product.discount,
-                          image: product.image,
-                          quantity: quantity,
-                          rate: product.rate,
-                          view: product.view,
-                          description: product.description,
-                          storage: product.storage,
-                          color: product.color,
-                          detail_item: product.detail_item,
-                          detail_sp: product.detail_sp,
-                        );
-                        context.read<ShopBloc>().add(AddToCart(productWithQty));
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Added to cart')),
-                        );
+                        _addToCart(context, product);
+                        _showSnack(context, 'Added to cart');
                       },
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: pinkPill,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: greenButton,
+                        elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide.none,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -463,7 +451,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       child: const Text(
                         'add to cart',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -473,13 +461,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // Buy now logic
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Buy now clicked')),
-                        );
+                        _addToCart(context, product);
+                        // TODO: navigate to your cart / checkout screen here,
+                        // e.g. Navigator.push(context, MaterialPageRoute(
+                        //   builder: (_) => const CartScreen()));
+                        _showSnack(context, 'Added to cart ready ');
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: pinkButton,
+                        backgroundColor: greenButton,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -489,7 +478,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       child: const Text(
                         'Buy now',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -503,6 +492,77 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       },
     );
   }
+
+  // ---------- Bloc actions ----------
+  void _addToCart(BuildContext context, ProductModel product) {
+    context.read<ShopBloc>().add(
+      AddToCart(product.copyWith(quantity: quantity)),
+    );
+    // reset so tapping again doesn't silently add the same amount twice
+    setState(() => quantity = 1);
+  }
+
+  // Cart icon + badge. Rebuilds only when the cart list changes.
+  Widget _cartButton(BuildContext context) {
+    return BlocBuilder<ShopBloc, ShopState>(
+      buildWhen: (previous, current) => previous.cart != current.cart,
+      builder: (context, state) {
+        // count each product once (same name = 1), ignoring quantity
+        final int count = state.cart.map((p) => p.name).toSet().length;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            _circleIconButton(
+              Icons.shopping_cart_outlined,
+              () => _openCart(context),
+            ),
+            if (count > 0)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: greenAccent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _openCart(BuildContext context) {
+    final bloc = context.read<ShopBloc>();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        // same bloc instance, so the cart screen shows the live cart
+        builder: (_) =>
+            BlocProvider.value(value: bloc, child: const CartScreen()),
+      ),
+    );
+  }
+
+  void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   // ---------- Helpers ----------
   IconData _getSpecIcon(int index) {
     const icons = [
@@ -512,6 +572,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       Icons.smartphone,
     ];
     return icons[index % icons.length];
+  }
+
+  Widget _valueChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(text, style: const TextStyle(fontSize: 13)),
+    );
   }
 
   Widget _circleIconButton(
@@ -524,36 +595,45 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-        ),
-        child: Icon(icon, color: color, size: 20),
+        decoration: const BoxDecoration(shape: BoxShape.circle),
+        child: Icon(icon, color: color, size: 22),
       ),
     );
   }
-  Widget _qtyButton(IconData icon, VoidCallback onTap) {
+
+  Widget _arrowButton(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 26,
-        height: 26,
-        decoration: BoxDecoration(
+        width: 32,
+        height: 32,
+        decoration: const BoxDecoration(
+          color: Color(0xCCFFFFFF), // white at ~80% opacity
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.black26),
         ),
         child: Icon(icon, size: 16, color: Colors.black87),
       ),
     );
   }
+
+  Widget _qtyButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 22,
+        height: 22,
+        alignment: Alignment.center,
+        child: Icon(icon, size: 16, color: Colors.black87),
+      ),
+    );
+  }
 }
+
 // ---------- Spec Item Widget ----------
 class _SpecItem extends StatelessWidget {
   final IconData icon;
   final String title;
-
   const _SpecItem({required this.icon, required this.title});
-
   @override
   Widget build(BuildContext context) {
     return Column(
