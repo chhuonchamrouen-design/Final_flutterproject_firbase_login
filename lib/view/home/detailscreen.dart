@@ -3,13 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shop/Model/productmodel.dart';
 import 'package:shop/bloc/shop_bloc.dart'; // adjust path if needed
 import 'package:shop/view/cart/cartscreen.dart'; // adjust to your CartScreen file path
-
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key});
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
-
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int quantity = 1;
   int selectedIndex = 0; // 0 = main image, 1.. = detail items

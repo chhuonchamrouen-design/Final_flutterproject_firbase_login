@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-
+import 'package:shop/auth/authservice.dart';
+   import 'package:shop/auth/authservice.dart';
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
   @override
@@ -10,16 +12,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _auth = AuthService.instance;
+  bool _loading = false;
   late final TapGestureRecognizer _termsTap = TapGestureRecognizer()
     ..onTap = () {};
 
   // Colors matching the design
   static const Color headerGreen = Color(0xFF34C759);
-  static const Color cardColor = Color(0x1A000000); // black 10% -> gray on white, darker green over header
+  static const Color cardColor = Color(0x1A000000);
   static const Color avatarBlue = Color(0xFF0B6BE6);
   static const Color linkRed = Color(0xFFE5484D);
   static const Color textDark = Color(0xFF1C1C1C);
   static const Color hintColor = Color(0xFF1C1C1C);
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -27,6 +32,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _passwordController.dispose();
     _termsTap.dispose();
     super.dispose();
+  }
+
+  void _snack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  /// Runs an auth action. On success, pops back to the root so the
+  /// StreamBuilder in main.dart can show the home screen.
+  Future<void> _run(Future<void> Function() action) async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      await action();
+      if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+    } on FirebaseAuthException catch (e) {
+      final msg = AuthService.errorMessage(e);
+      if (msg != null) _snack(msg);
+    } catch (_) {
+      _snack('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+  void _signUp() {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      _snack('Please fill in all fields.');
+      return;
+    }
+    if (password.length < 6) {
+      _snack('Password must be at least 6 characters.');
+      return;
+    }
+    _run(() => _auth.signUp(name, email, password));
   }
 
   @override
@@ -37,7 +81,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Curved green header
           Positioned(
             top: 0,
             left: 0,
@@ -60,7 +103,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   const SizedBox(height: 12),
 
-                  // Avatar
                   Container(
                     width: 64,
                     height: 64,
@@ -68,17 +110,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       color: avatarBlue,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 46,
-                    ),
+                    child: const Icon(Icons.person,
+                        color: Colors.white, size: 46),
                   ),
                   const SizedBox(height: 6),
 
-                  // Title (white, below avatar)
                   const Text(
-                    'Sing up',
+                    'Sign up',
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
@@ -87,7 +125,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(height: 22),
 
-                  // Translucent gray card
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
@@ -120,35 +157,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                           _buildTextField(
                             controller: _passwordController,
-                            hint: 'Paasword',
+                            hint: 'Password',
                             icon: _lockInCircle(),
                             obscureText: true,
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 20),
 
-                          // Forgot password
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {},
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: const Size(0, 0),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: const Text(
-                                'For get password?',
-                                style: TextStyle(color: textDark, fontSize: 12),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Sign up button (white)
                           SizedBox(
                             height: 48,
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: _loading ? null : _signUp,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: Colors.black,
@@ -157,18 +175,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Text(
-                                'Sign up',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
+                              child: _loading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2.5),
+                                    )
+                                  : const Text(
+                                      'Sign up',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 18),
 
-                          // Terms
                           Text.rich(
                             TextSpan(
                               style: const TextStyle(
@@ -182,7 +206,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       'By clicking this button, you agree\nwith our ',
                                 ),
                                 TextSpan(
-                                  text: 'Term and conditions',
+                                  text: 'Terms and conditions',
                                   style: const TextStyle(color: linkRed),
                                   recognizer: _termsTap,
                                 ),
@@ -192,12 +216,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           const SizedBox(height: 18),
 
-                          // Social icons
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               InkWell(
-                                onTap: () {},
+                                onTap: _loading
+                                    ? null
+                                    : () => _run(_auth.signInWithFacebook),
                                 borderRadius: BorderRadius.circular(30),
                                 child: const Padding(
                                   padding: EdgeInsets.all(6),
@@ -210,7 +235,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                               const SizedBox(width: 28),
                               InkWell(
-                                onTap: () {},
+                                onTap: _loading
+                                    ? null
+                                    : () => _run(_auth.signInWithGoogle),
                                 borderRadius: BorderRadius.circular(30),
                                 child: Padding(
                                   padding: const EdgeInsets.all(6),
@@ -221,18 +248,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           const SizedBox(height: 12),
 
-                          // Sign in prompt
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
-                                'Already have an account?',
+                                'Already have an account? ',
                                 style: TextStyle(color: textDark, fontSize: 12),
                               ),
                               GestureDetector(
-                                onTap: () {},
+                                onTap: _loading
+                                    ? null
+                                    : () => Navigator.of(context).pop(),
                                 child: const Text(
-                                  'Sigin',
+                                  'Sign in',
                                   style: TextStyle(
                                     color: linkRed,
                                     fontSize: 12,
@@ -265,6 +293,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      enabled: !_loading,
       style: const TextStyle(fontSize: 16, color: textDark),
       decoration: InputDecoration(
         filled: true,
@@ -288,7 +317,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  /// Lock icon inside a circle outline.
   Widget _lockInCircle() {
     return Container(
       width: 26,
@@ -301,8 +329,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  /// Multicolor "G". For the exact Google logo, use an asset image instead
-  /// (e.g. Image.asset('assets/google.png', width: 28)).
   Widget _googleG() {
     return ShaderMask(
       shaderCallback: (bounds) => const SweepGradient(
