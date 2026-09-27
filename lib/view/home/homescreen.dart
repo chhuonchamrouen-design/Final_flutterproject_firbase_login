@@ -4,6 +4,7 @@ import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
 import 'package:shop/Model/productmodel.dart';
 import 'package:shop/bloc/shop_bloc.dart';
 import 'package:shop/view/home/detailscreen.dart';
+import 'package:shop/view/cart/cartscreen.dart'; // adjust to your CartScreen file path
 
 const Color _pageBg = Color(0xFFFFFFFF); // page background (white)
 const Color _cardBg = Color(0xFFEDEDED); // product card (light grey)
@@ -21,6 +22,9 @@ class Homescreen extends StatefulWidget {
 
 class _HomescreenState extends State<Homescreen> {
   int selectedCategoryIndex = 0;
+  // ---------- search ----------
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
   static const List<String> _categoryImages = [
     '', // "All"
     'assets/image/apple.jpg',
@@ -48,6 +52,12 @@ class _HomescreenState extends State<Homescreen> {
     context.read<ShopBloc>().add(LoadProduct());
   }
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   void _selectCategory(int index, String catImage) {
     setState(() => selectedCategoryIndex = index);
     context.read<ShopBloc>().add(
@@ -55,15 +65,31 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
+  void _onSearchChanged(String value) {
+    setState(() => _searchQuery = value);
+  }
+
+  void _clearSearch() {
+    _searchCtrl.clear();
+    setState(() => _searchQuery = '');
+    FocusScope.of(context).unfocus();
+  }
+
+  // Filters the (already category-filtered) product list by name.
+  List<ProductModel> _applySearch(List<ProductModel> products) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return products;
+    return products.where((p) => p.name.toLowerCase().contains(query)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _pageBg,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(context),
       body: BlocBuilder<ShopBloc, ShopState>(
         builder: (context, state) {
-          final products = state.filltercategory;
-
+          final products = _applySearch(state.filltercategory);
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -83,7 +109,7 @@ class _HomescreenState extends State<Homescreen> {
   }
 
   // ---------------- App bar ----------------
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       title: const Text(
         'Phone shop',
@@ -98,17 +124,66 @@ class _HomescreenState extends State<Homescreen> {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      actions: [
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(
-            Icons.notifications_none_rounded,
-            color: Colors.black,
-            size: 28,
-          ),
-        ),
-        const SizedBox(width: 8),
-      ],
+      actions: [_cartButton(context), const SizedBox(width: 8)],
+    );
+  }
+
+  // ---------------- Cart button (badge + navigate), same behavior as detail screen ----------------
+  Widget _cartButton(BuildContext context) {
+    return BlocBuilder<ShopBloc, ShopState>(
+      buildWhen: (previous, current) => previous.cart != current.cart,
+      builder: (context, state) {
+        final int count = state.cart.map((p) => p.name).toSet().length;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              onPressed: () => _openCart(context),
+              icon: const Icon(
+                Icons.shopping_cart,
+                color: Colors.black,
+                size: 28,
+              ),
+            ),
+            if (count > 0)
+              Positioned(
+                right: 4,
+                top: 6,
+                child: IgnorePointer(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _badgeBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _openCart(BuildContext context) {
+    final bloc = context.read<ShopBloc>();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            BlocProvider.value(value: bloc, child: const CartScreen()),
+      ),
     );
   }
 
@@ -126,18 +201,34 @@ class _HomescreenState extends State<Homescreen> {
                 color: Colors.white,
                 border: Border.all(color: _searchBorder),
               ),
-              child: const TextField(
-                style: TextStyle(fontSize: 17),
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: _onSearchChanged,
+                textInputAction: TextInputAction.search,
+                style: const TextStyle(fontSize: 17),
                 decoration: InputDecoration(
-                  prefixIcon: Icon(
+                  prefixIcon: const Icon(
                     Icons.search,
                     color: Colors.black54,
                     size: 26,
                   ),
+                  suffixIcon: _searchQuery.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.black54,
+                            size: 20,
+                          ),
+                          onPressed: _clearSearch,
+                        ),
                   hintText: 'Search',
-                  hintStyle: TextStyle(color: Colors.black54, fontSize: 16),
+                  hintStyle: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 16,
+                  ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
             ),
@@ -225,6 +316,7 @@ class _HomescreenState extends State<Homescreen> {
       ),
     );
   }
+
   // ---------------- Category chips ----------------
   Widget _buildCategoryChips() {
     return SizedBox(
@@ -241,37 +333,26 @@ class _HomescreenState extends State<Homescreen> {
             padding: const EdgeInsets.only(right: 18),
             child: GestureDetector(
               onTap: () => _selectCategory(index, catImage),
-              child: isSelected
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 22),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(21),
-                        color: Colors.white,
-                        border: Border.all(
-                          color: _chipSelectedBorder,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black,
-                        ),
-                      ),
-                    )
-                  : Center(
-                      child: Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 10,
+                ),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(21),
+                  color: isSelected ? Colors.green : Colors.white,
+                  border: Border.all(color: Colors.grey, width: 1.5),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    color: isSelected ? Colors.white : Colors.black,
+                  ),
+                ),
+              ),
             ),
           );
         },
@@ -285,9 +366,14 @@ class _HomescreenState extends State<Homescreen> {
     List<ProductModel> favorites,
   ) {
     if (products.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(30),
-        child: Text('No products found'),
+      return Padding(
+        padding: const EdgeInsets.all(30),
+        child: Text(
+          _searchQuery.trim().isEmpty
+              ? 'No products found'
+              : 'No results for "$_searchQuery"',
+          textAlign: TextAlign.center,
+        ),
       );
     }
     return Padding(
@@ -316,6 +402,7 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 }
+
 // ---------------- Product card ----------------
 class _ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -459,7 +546,6 @@ class _ProductCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-
             // Add to cart
             SizedBox(
               width: double.infinity,

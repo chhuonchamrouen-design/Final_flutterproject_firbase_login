@@ -6,7 +6,6 @@ import 'package:shop/Mainhomepage.dart';
 import 'package:shop/bloc/shop_bloc.dart';
 import 'package:shop/view/home/detailscreen.dart';
 import 'package:shop/view/home/homescreen.dart';
-
 class Favaritescreen extends StatelessWidget {
   const Favaritescreen({super.key});
   static const Color pageBackground = Color(0xFFFFFFFF);
@@ -30,7 +29,6 @@ class Favaritescreen extends StatelessWidget {
             scrolledUnderElevation: 0,
             centerTitle: true,
             leading: IconButton(
-              //onPressed: () => Navigator.pop(context),
               onPressed: () => Get.offAll(() => const Mainhomepage()),
               icon: const Icon(Icons.arrow_back, color: textDark, size: 28),
             ),
@@ -42,17 +40,6 @@ class Favaritescreen extends StatelessWidget {
                 fontSize: 20,
               ),
             ),
-            actions: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.notifications_none,
-                  color: textDark,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 4),
-            ],
           ),
           body: favorites.isEmpty
               ? const Center(
@@ -82,7 +69,8 @@ class Favaritescreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                           decoration: BoxDecoration(
-                            color: cardGrey,
+                            color: Colors.white,
+                            border: Border.all(color: Colors.grey),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Column(
@@ -221,7 +209,6 @@ class Favaritescreen extends StatelessWidget {
                             ),
                           ),
                         ),
-
                         // Heart (tap to remove from saved items)
                         Positioned(
                           top: 2,

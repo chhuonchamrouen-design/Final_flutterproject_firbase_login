@@ -16,7 +16,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _loading = false;
   late final TapGestureRecognizer _termsTap = TapGestureRecognizer()
     ..onTap = () {};
-
   // Colors matching the design
   static const Color headerGreen = Color(0xFF34C759);
   static const Color cardColor = Color(0x1A000000);

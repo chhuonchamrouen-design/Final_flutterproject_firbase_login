@@ -1,12 +1,10 @@
 part of 'shop_bloc.dart';
-
 class ShopState {
   final List<ProductModel> allproduct;
   final List<ProductModel> filltercategory;
   final List<ProductModel> favorites;
   final List<ProductModel> cart;
   final ProductModel? selectedProduct; // for detail screen
-
   ShopState({
     this.allproduct = const [],
     this.filltercategory = const [],
@@ -14,7 +12,6 @@ class ShopState {
     this.cart = const [],
     this.selectedProduct,
   });
-
   ShopState copy({
     List<ProductModel>? allproduct,
     List<ProductModel>? filltercategory,

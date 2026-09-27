@@ -8,11 +8,9 @@ class ProductDetailScreen extends StatefulWidget {
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
-
-git inti gi
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int quantity = 1;
-  int selectedIndex = 0; // 0 = main image, 1.. = detail items
+  int selectedIndex = 0;
   static const Color greyBackground = Color(0xFFFFFFFF);
   static const Color greyPill = Color(0xFFEDEDED);
   static const Color greenButton = Color(0xFF3ECD5E);
@@ -31,7 +29,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         final bool isFavorite = state.favorites.any(
           (p) => p.code == product.code,
         );
-        // all images: main image first, then every detail item
         final List<String> allImages = [product.image, ...product.detail_item];
         final int currentIndex = selectedIndex < allImages.length
             ? selectedIndex
@@ -43,7 +40,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         void goToImage(int index) {
           setState(() => selectedIndex = index);
         }
-
         return Scaffold(
           backgroundColor: greyBackground,
           body: SafeArea(
@@ -52,6 +48,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // ---------- Top bar ----------
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -83,14 +80,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ],
                     ),
                   ),
-
                   // ---------- Main image with arrows (radius 20) ----------
                   SizedBox(
                     height: 280,
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 30),
                       width: double.infinity,
-                      clipBehavior: Clip.antiAlias, // clips image to radius 20
+                      clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -114,8 +110,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             ),
                           ),
-
-                          // Back arrow (left)
                           if (currentIndex > 0)
                             Positioned(
                               left: 8,
@@ -128,8 +122,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 ),
                               ),
                             ),
-
-                          // Forward arrow (right)
                           if (currentIndex < allImages.length - 1)
                             Positioned(
                               right: 8,
@@ -148,7 +140,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // ---------- Thumbnails (main image + all detail items) ----------
+                  // ---------- Thumbnails ----------
                   if (allImages.length > 1)
                     SizedBox(
                       height: 64,
@@ -397,27 +389,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             },
                           ),
                         ),
-
                         const SizedBox(height: 22),
 
-                        // Description
-                        const Text(
-                          'Description',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black,
-                          ),
+                        // ---------- Description (expandable) ----------
+                        _ExpandableDescription(
+                          description: product.description,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          product.description,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black87,
-                            height: 1.45,
-                          ),
-                        ),
+
+                        const SizedBox(height: 22),
+                        // ---------- Category you may like ----------
+                        _YouMayLikeSection(currentProduct: product),
                       ],
                     ),
                   ),
@@ -425,7 +406,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
             ),
           ),
-
           // ---------- Bottom Buttons ----------
           bottomNavigationBar: SafeArea(
             top: false,
@@ -462,10 +442,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         _addToCart(context, product);
-                        // TODO: navigate to your cart / checkout screen here,
-                        // e.g. Navigator.push(context, MaterialPageRoute(
-                        //   builder: (_) => const CartScreen()));
-                        _showSnack(context, 'Added to cart ready ');
+                        _buyNow(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: greenButton,
@@ -498,16 +475,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     context.read<ShopBloc>().add(
       AddToCart(product.copyWith(quantity: quantity)),
     );
-    // reset so tapping again doesn't silently add the same amount twice
     setState(() => quantity = 1);
   }
 
-  // Cart icon + badge. Rebuilds only when the cart list changes.
   Widget _cartButton(BuildContext context) {
     return BlocBuilder<ShopBloc, ShopState>(
       buildWhen: (previous, current) => previous.cart != current.cart,
       builder: (context, state) {
-        // count each product once (same name = 1), ignoring quantity
         final int count = state.cart.map((p) => p.name).toSet().length;
         return Stack(
           clipBehavior: Clip.none,
@@ -550,7 +524,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        // same bloc instance, so the cart screen shows the live cart
+        builder: (_) =>
+            BlocProvider.value(value: bloc, child: const CartScreen()),
+      ),
+    );
+  }
+
+  void _buyNow(BuildContext context) {
+    final bloc = context.read<ShopBloc>();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
         builder: (_) =>
             BlocProvider.value(value: bloc, child: const CartScreen()),
       ),
@@ -608,7 +592,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         width: 32,
         height: 32,
         decoration: const BoxDecoration(
-          color: Color(0xCCFFFFFF), // white at ~80% opacity
+          color: Color(0xCCFFFFFF),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, size: 16, color: Colors.black87),
@@ -660,6 +644,258 @@ class _SpecItem extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ---------- Expandable Description Widget ----------
+class _ExpandableDescription extends StatefulWidget {
+  final String description;
+  const _ExpandableDescription({required this.description});
+
+  @override
+  State<_ExpandableDescription> createState() => _ExpandableDescriptionState();
+}
+
+class _ExpandableDescriptionState extends State<_ExpandableDescription> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title
+        const Text(
+          'Description',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Body + Read more toggle
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final textSpan = TextSpan(
+              text: widget.description,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+                height: 1.45,
+              ),
+            );
+
+            final textPainter = TextPainter(
+              text: textSpan,
+              maxLines: 3,
+              textDirection: TextDirection.ltr,
+            )..layout(maxWidth: constraints.maxWidth);
+            final isOverflowing = textPainter.didExceedMaxLines;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.description,
+                  maxLines: _isExpanded ? null : 3,
+                  overflow: _isExpanded
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                    height: 1.45,
+                  ),
+                ),
+
+                // 👇 Read more / Read less aligned to the RIGHT
+                if (isOverflowing)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _isExpanded = !_isExpanded;
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _isExpanded ? 'Read less' : 'Read more',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              _isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              size: 18,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// ---------- Product "You May Like" Section ----------
+class _YouMayLikeSection extends StatelessWidget {
+  final ProductModel currentProduct;
+  const _YouMayLikeSection({required this.currentProduct});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ShopBloc, ShopState>(
+      buildWhen: (previous, current) =>
+          previous.allproduct != current.allproduct,
+      builder: (context, state) {
+        final related = state.allproduct
+            .where(
+              (p) =>
+                  p.category == currentProduct.category &&
+                  p.code != currentProduct.code,
+            )
+            .toList();
+        if (related.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Category you may like',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 82,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: related.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final item = related[index];
+                  final double newPrice =
+                      item.oldprice - (item.oldprice * item.discount / 100);
+                  return GestureDetector(
+                    onTap: () {
+                      context.read<ShopBloc>().add(SelectProduct(item));
+                    },
+                    child: Container(
+                      width: 240,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.black),
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.asset(
+                              item.image,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.image_not_supported,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  item.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '\$${newPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              context.read<ShopBloc>().add(
+                                AddToCart(item.copyWith(quantity: 1)),
+                              );
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Added to cart'),
+                                  ),
+                                );
+                            },
+                            child: IconButton(
+                              onPressed: () {
+                                context.read<ShopBloc>().add(
+                                  SelectProduct(item),
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BlocProvider.value(
+                                      value: context.read<ShopBloc>(),
+                                      child: const ProductDetailScreen(),
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.shopping_cart,
+                                size: 20,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

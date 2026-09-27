@@ -6,26 +6,20 @@ import 'package:shop/view/home/checkoutscreen.dart'; // adjust to your CheckoutS
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
-  // ---------- White/green theme palette (matches the rest of the app) ----------
   static const Color pageBackground = Color(0xFFFFFFFF);
   static const Color cardBorder = Color(0xFFECECEC);
   static const Color summaryBackground = Color(0xFFFFFFFF);
   static const Color checkoutButton = Color(0xFF3ECD5E);
   static const Color discountRed = Color(0xFFFF3B6B);
 
-  // ---------- Go back to the home screen ----------
-  // Pops every screen until the first route (your home screen).
-  // If home is NOT the first route in your app, replace this with:
-  // Navigator.pushAndRemoveUntil(
-  //   context,
-  //   MaterialPageRoute(builder: (_) => const HomeScreen()),
-  //   (route) => false,
-  // );
+  // ---------- shared pricing constants (kept in sync with CheckoutScreen) ----------
+  static const double delivery = 1.99;
+  static const double discount = 2.99;
+
   void _goHome(BuildContext context) {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  // ---------- "Are you sure?" bottom sheet ----------
   void _confirmDelete(BuildContext context, ProductModel item) {
     final bloc = context.read<ShopBloc>();
     showModalBottomSheet(
@@ -45,7 +39,7 @@ class CartScreen extends StatelessWidget {
                   width: 44,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black12,
+                    color: Colors.black,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -136,12 +130,7 @@ class CartScreen extends StatelessWidget {
           0,
           (sum, item) => sum + (item.oldprice * item.quantity),
         );
-        // NOTE: delivery/discount are placeholders — wire these to your
-        // real bloc/state values if you track them separately.
-        const double delivery = 1.99;
-        const double discount = 2.99;
         final double subtotal = total + delivery - discount;
-
         return Scaffold(
           backgroundColor: pageBackground,
           body: SafeArea(
@@ -173,11 +162,6 @@ class CartScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Icon(
-                        Icons.notifications_none_rounded,
-                        color: Colors.black,
-                        size: 28,
-                      ),
                     ],
                   ),
                 ),
@@ -201,7 +185,6 @@ class CartScreen extends StatelessWidget {
                             return _CartItemCard(
                               product: item,
                               cardColor: Colors.white,
-                              // X icon -> ask first, then delete
                               onRemove: () => _confirmDelete(context, item),
                               onIncrement: () {
                                 context.read<ShopBloc>().add(
@@ -265,7 +248,7 @@ class CartScreen extends StatelessWidget {
                                     MaterialPageRoute(
                                       builder: (_) => BlocProvider.value(
                                         value: bloc,
-                                        child: const CheckoutScreen(),
+                                        child: CheckoutScreen(total: subtotal),
                                       ),
                                     ),
                                   );
@@ -371,7 +354,6 @@ class _CartItemCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Name row (with X), color, qty, and price/stepper row
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,7 +384,6 @@ class _CartItemCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                // full color name (was product.color[0] = first letter only)
                 Text(
                   'Colors : ${product.color.isNotEmpty ? product.color : '-'}',
                   maxLines: 1,
