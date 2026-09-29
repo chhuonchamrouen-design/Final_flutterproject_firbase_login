@@ -44,6 +44,8 @@ dependencies:
   qr_flutter: ^4.1.0
   google_maps_flutter: ^2.18.2
   geocoding: ^5.0.0
+  shared_preferences: ^2.5.5
+  cloud_firestore: ^6.10.0
 
 dev_dependencies:
   flutter_test:

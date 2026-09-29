@@ -1,15 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shop/Mainhomepage.dart';
+import 'package:shop/admin/home_admin/homead.dart';
 import 'package:shop/auth/authservice.dart';
 import 'package:shop/auth/signupscreen.dart';
-
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
 }
-
 class _SignInScreenState extends State<SignInScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -18,12 +19,11 @@ class _SignInScreenState extends State<SignInScreen> {
 
   // Colors matching the design
   static const Color headerGreen = Color(0xFF34C759);
-  static const Color cardColor = Color(0x1A000000); // black 10%
+  static const Color cardColor = Color(0x1A000000);
   static const Color avatarBlue = Color(0xFF0B6BE6);
   static const Color linkRed = Color(0xFFE5484D);
   static const Color textDark = Color(0xFF1C1C1C);
 
-  // Horizontal inset of fields/buttons inside the card (as in the design)
   static const double _inset = 22;
 
   @override
@@ -40,8 +40,6 @@ class _SignInScreenState extends State<SignInScreen> {
       ..showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  /// Runs an auth action with loading state + error handling.
-  /// On success, the StreamBuilder in main.dart switches to the home screen.
   Future<void> _run(Future<void> Function() action) async {
     if (_loading) return;
     setState(() => _loading = true);
@@ -56,17 +54,53 @@ class _SignInScreenState extends State<SignInScreen> {
       if (mounted) setState(() => _loading = false);
     }
   }
-
+  // ⬇️⬇️⬇️ កែ `_signIn` ដើម្បីពិនិត្យ role ⬇️⬇️⬇️
   void _signIn() {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+
     if (email.isEmpty || password.isEmpty) {
       _snack('Please enter your email and password.');
       return;
     }
-    _run(() => _auth.signIn(email, password));
-  }
 
+    _run(() async {
+      // 1. Sign in
+      await _auth.signIn(email, password);
+
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      debugPrint('✅ Signed in UID: $uid');
+
+      // 2. Read role from Firestore
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      debugPrint('📄 Doc exists: ${doc.exists}');
+      debugPrint('📄 Data: ${doc.data()}');
+
+      final role = doc.data()?['role'];
+      debugPrint('👤 Role: $role');
+
+      // 3. Navigate based on role
+      if (!mounted) return;
+      if (role == 'admin') {
+        debugPrint('Admin');
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const Homeadmin()),
+          (route) => false,
+        );
+      } else {
+        debugPrint('➡️ Mainhomepage');
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const Mainhomepage()),
+          (route) => false,
+        );
+      }
+    });
+  }
+  // ⬆️⬆️⬆️ បញ្ចប់ការកែ ⬆️⬆️⬆️
   void _forgotPassword() {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
@@ -113,8 +147,6 @@ class _SignInScreenState extends State<SignInScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 16),
-
-                  // Title (white, above avatar)
                   const Text(
                     'Sing in',
                     style: TextStyle(
@@ -124,8 +156,6 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-
-                  // Avatar
                   Container(
                     width: 52,
                     height: 52,
@@ -137,8 +167,6 @@ class _SignInScreenState extends State<SignInScreen> {
                         color: Colors.white, size: 40),
                   ),
                   const SizedBox(height: 14),
-
-                  // Translucent gray card (overlaps the green header)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: Container(
@@ -159,7 +187,6 @@ class _SignInScreenState extends State<SignInScreen> {
                             keyboardType: TextInputType.emailAddress,
                           )),
                           const SizedBox(height: 14),
-
                           _inset_(_buildTextField(
                             controller: _passwordController,
                             hint: 'Paasword',
@@ -167,8 +194,6 @@ class _SignInScreenState extends State<SignInScreen> {
                             obscureText: true,
                           )),
                           const SizedBox(height: 6),
-
-                          // Forgot password
                           _inset_(Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -185,8 +210,6 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           )),
                           const SizedBox(height: 22),
-
-                          // Sign in button (white)
                           _inset_(SizedBox(
                             height: 46,
                             child: ElevatedButton(
@@ -216,8 +239,6 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           )),
                           const SizedBox(height: 18),
-
-                          // Divider (wider than the fields, like the design)
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 4),
                             child: Row(
@@ -244,8 +265,6 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-
-                          // Social icons
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -277,8 +296,6 @@ class _SignInScreenState extends State<SignInScreen> {
                             ],
                           ),
                           const SizedBox(height: 18),
-
-                          // Sign up prompt
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -353,7 +370,6 @@ class _SignInScreenState extends State<SignInScreen> {
     );
   }
 
-  /// Lock icon inside a circle outline.
   Widget _lockInCircle() {
     return Container(
       width: 26,
@@ -366,8 +382,6 @@ class _SignInScreenState extends State<SignInScreen> {
     );
   }
 
-  /// Multicolor "G". For the exact Google logo, use an asset image instead
-  /// (e.g. Image.asset('assets/google.png', width: 28)).
   Widget _googleG() {
     return ShaderMask(
       shaderCallback: (bounds) => const SweepGradient(

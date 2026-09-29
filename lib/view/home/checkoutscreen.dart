@@ -2,27 +2,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:shop/Model/ordermodel.dart';
 import 'package:shop/Model/productmodel.dart';
-import 'package:shop/bloc/shop_bloc.dart'; // adjust path if needed
+import 'package:shop/mod/appcolor.dart'; // <-- file that contains "extension Appcolor"
+import 'package:shop/bloc/shop_bloc.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  /// The final amount to charge, computed by CartScreen
-  /// (items total + delivery - discount). If this screen is ever
-  /// opened without it, we fall back to computing it ourselves using
-  /// the same [delivery]/[discount] constants so the number can never
-  /// drift from what CartScreen shows.
   final double? total;
-
   const CheckoutScreen({super.key, this.total});
-
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  // ---------- palette (same as cart) ----------
-  static const Color pageBackground = Color(0xFFFFFFFF);
-  static const Color rowBorder = Color(0xFFE6E6E6);
+  // ---------- palette (theme-aware) ----------
+  Color get pageBackground => context.appPageBg;
+  Color get rowBorder => context.appBorder;
   static const Color greenButton = Color(0xFF3ECD5E);
   static const Color errorRed = Color(0xFFFF3B6B);
 
@@ -47,7 +42,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       rounded: false,
     ),
   ];
-
   // ---------- payment options ----------
   static const List<_Option> _payments = [
     _Option(title: 'ABA', badge: 'ABA', color: Color(0xFF005E7B)),
@@ -93,7 +87,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }) {
     return showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -112,9 +106,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
+                      color: sheetContext.appText,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -129,16 +124,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           leading: _leading(o),
                           title: Text(
                             o.title,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: sheetContext.appText,
+                            ),
                           ),
                           subtitle: o.subtitle == null
                               ? null
-                              : Text(o.subtitle!),
+                              : Text(
+                                  o.subtitle!,
+                                  style: TextStyle(
+                                    color: sheetContext.appMuted,
+                                  ),
+                                ),
                           trailing: Icon(
                             i == selected
                                 ? Icons.radio_button_checked
                                 : Icons.radio_button_off,
-                            color: i == selected ? greenButton : Colors.black38,
+                            color: i == selected
+                                ? greenButton
+                                : sheetContext.appMuted,
                           ),
                           onTap: () {
                             onSelected(i);
@@ -177,22 +182,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (hasError) return;
 
+    final payment = _payments[_payment];
+    final bool isCashOnDelivery = payment.title == 'Cash on delivery';
+
+    if (isCashOnDelivery) {
+      _placeOrder(context, items);
+      return;
+    }
+
     final double total = _computeTotal(items);
     _showQrPayment(context, items, total);
   }
 
-  // ---------- QR payment / order dialog ----------
+  // ---------- QR payment dialog (only used for non-COD payments) ----------
   void _showQrPayment(
     BuildContext context,
     List<ProductModel> items,
     double total,
   ) {
     final payment = _payments[_payment];
-    final bool isCashOnDelivery = payment.title == 'Cash on delivery';
     final String location = _locationCtrl.text.trim();
-    final qrData = isCashOnDelivery
-        ? 'ORDER|LOC:$location|AMOUNT:${total.toStringAsFixed(2)}'
-        : 'PAY|${payment.title}|AMOUNT:${total.toStringAsFixed(2)}|LOC:$location';
+    final qrData =
+        'PAY|${payment.title}|AMOUNT:${total.toStringAsFixed(2)}|LOC:$location';
 
     const int countdownSeconds = 20;
     showDialog(
@@ -204,14 +215,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           child: StatefulBuilder(
             builder: (context, setDialogState) {
               return _QrPaymentDialogBody(
-                title: isCashOnDelivery
-                    ? 'Scan to confirm order'
-                    : 'Scan to pay',
-                subtitle: isCashOnDelivery
-                    ? 'Scan this code to confirm your order'
-                    : 'Scan with your banking app (ABA, ACLEDA, Wing, etc.) to pay',
+                title: 'Scan to pay',
+                subtitle:
+                    'Scan with your banking app (ABA, ACLEDA, Wing, etc.) to pay',
                 total: total,
-                isCashOnDelivery: isCashOnDelivery,
                 qrData: qrData,
                 rowBorder: rowBorder,
                 greenButton: greenButton,
@@ -232,16 +239,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  // ---------- Place the order ----------
   void _placeOrder(BuildContext context, List<ProductModel> items) {
     final bloc = context.read<ShopBloc>();
-    for (final item in items) {
-      bloc.add(RemoveFromCart(item));
-    }
+    final double total = _computeTotal(items);
+    final payment = _payments[_payment];
+
+    final order = OrderModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      items: List<ProductModel>.from(items),
+      total: total,
+      deliveryMethod: _deliveries[_delivery].title,
+      paymentMethod: payment.title,
+      address: _locationCtrl.text.trim(),
+      contact: _contactCtrl.text.trim(),
+      placedAt: DateTime.now(),
+    );
+
+    bloc.add(PlaceOrder(order));
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: dialogContext.appSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: SizedBox(
           width: double.maxFinite,
@@ -255,15 +276,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: Icon(Icons.check, color: Colors.white, size: 36),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Order placed!',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: dialogContext.appText,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Thank you for your order.\nWe will contact you soon.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: dialogContext.appMuted),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -302,6 +327,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  // ---------- Text field decoration (shared by address + contact) ----------
+  InputDecoration _fieldDecoration({
+    required String hint,
+    required IconData icon,
+    String? errorText,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(fontSize: 13, color: context.appMuted),
+      prefixIcon: Icon(icon, size: 20, color: context.appMuted),
+      errorText: errorText,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: rowBorder),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: greenButton, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: errorRed),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: errorRed, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ShopBloc, ShopState>(
@@ -324,9 +381,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     children: [
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Colors.black,
+                          color: context.appText,
                           size: 30,
                         ),
                       ),
@@ -334,10 +391,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         child: Text(
                           'Checkout (${items.length})',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: context.appText,
                           ),
                         ),
                       ),
@@ -348,12 +405,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                 Expanded(
                   child: items.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'Your cart is empty',
                             style: TextStyle(
                               fontSize: 15,
-                              color: Colors.black54,
+                              color: context.appMuted,
                             ),
                           ),
                         )
@@ -376,7 +433,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ),
                               ),
 
-                              // ---------- Delivery location (text input) ----------
+                              // ---------- Delivery location ----------
                               const SizedBox(height: 20),
                               _label('Delivery Location'),
                               const SizedBox(height: 8),
@@ -385,58 +442,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 keyboardType: TextInputType.streetAddress,
                                 maxLines: 2,
                                 minLines: 1,
+                                style: TextStyle(color: context.appText),
                                 onChanged: (_) {
                                   if (_locationError != null) {
                                     setState(() => _locationError = null);
                                   }
                                 },
-                                decoration: InputDecoration(
-                                  hintText:
-                                      'e.g. St. 271, Toul Kork, Phnom Penh',
-                                  hintStyle: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black38,
-                                  ),
-                                  prefixIcon: const Icon(
-                                    Icons.location_on_outlined,
-                                    size: 20,
-                                    color: Colors.black54,
-                                  ),
+                                decoration: _fieldDecoration(
+                                  hint: 'e.g. St. 271, Toul Kork, Phnom Penh',
+                                  icon: Icons.location_on_outlined,
                                   errorText: _locationError,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: rowBorder,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: greenButton,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: errorRed,
-                                    ),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: errorRed,
-                                      width: 1.5,
-                                    ),
-                                  ),
                                 ),
                               ),
 
-                              // ---------- Method of delivery (J&T / VET) ----------
+                              // ---------- Method of delivery ----------
                               const SizedBox(height: 20),
                               _label('Method of Delivery'),
                               const SizedBox(height: 8),
@@ -460,53 +479,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               TextField(
                                 controller: _contactCtrl,
                                 keyboardType: TextInputType.text,
+                                style: TextStyle(color: context.appText),
                                 onChanged: (_) {
                                   if (_contactError != null) {
                                     setState(() => _contactError = null);
                                   }
                                 },
-                                decoration: InputDecoration(
-                                  hintText: 'Phone number or Telegram',
-                                  hintStyle: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black38,
-                                  ),
-                                  prefixIcon: const Icon(
-                                    Icons.phone_outlined,
-                                    size: 20,
-                                    color: Colors.black54,
-                                  ),
+                                decoration: _fieldDecoration(
+                                  hint: 'Phone number or Telegram',
+                                  icon: Icons.phone_outlined,
                                   errorText: _contactError,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: rowBorder,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: greenButton,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: errorRed,
-                                    ),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: errorRed,
-                                      width: 1.5,
-                                    ),
-                                  ),
                                 ),
                               ),
 
@@ -569,21 +551,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _label(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w700,
-        color: Colors.black,
+        color: context.appText,
       ),
     );
   }
 
   Widget _summaryCard(ProductModel p) {
+    final style = TextStyle(fontSize: 11, color: context.appText);
     return Container(
       width: 120,
       height: 200,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: rowBorder),
       ),
@@ -597,7 +580,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               p.image,
               fit: BoxFit.contain,
               errorBuilder: (_, __, ___) =>
-                  Icon(Icons.image_not_supported, color: Colors.grey),
+                  const Icon(Icons.image_not_supported, color: Colors.grey),
             ),
           ),
           const SizedBox(height: 4),
@@ -605,20 +588,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             p.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11),
+            style: style,
           ),
           Text(
             'colors: ${p.color.isNotEmpty ? p.color : '-'}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11),
+            style: style,
           ),
-          Text('Qty: ${p.quantity}', style: const TextStyle(fontSize: 11)),
+          Text('Qty: ${p.quantity}', style: style),
           Text(
             'Price: \$${p.oldprice.toStringAsFixed(2)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11),
+            style: style,
           ),
         ],
       ),
@@ -635,7 +618,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: rowBorder),
       ),
@@ -651,21 +634,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13),
+                  style: TextStyle(fontSize: 13, color: context.appText),
                 ),
                 if (subtitle != null)
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 11, color: Colors.black54),
+                    style: TextStyle(fontSize: 11, color: context.appMuted),
                   ),
               ],
             ),
           ),
           GestureDetector(
             onTap: onChange,
-            child: const Padding(
-              padding: EdgeInsets.all(4),
-              child: Text('Change', style: TextStyle(fontSize: 13)),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Text(
+                'Change',
+                style: TextStyle(fontSize: 13, color: context.appText),
+              ),
             ),
           ),
         ],
@@ -724,7 +710,6 @@ class _QrPaymentDialogBody extends StatefulWidget {
   final String title;
   final String subtitle;
   final double total;
-  final bool isCashOnDelivery;
   final String qrData;
   final Color rowBorder;
   final Color greenButton;
@@ -735,7 +720,6 @@ class _QrPaymentDialogBody extends StatefulWidget {
     required this.title,
     required this.subtitle,
     required this.total,
-    required this.isCashOnDelivery,
     required this.qrData,
     required this.rowBorder,
     required this.greenButton,
@@ -784,7 +768,7 @@ class _QrPaymentDialogBodyState extends State<_QrPaymentDialogBody> {
     final double progress = _secondsLeft / widget.countdownSeconds;
 
     return AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: context.appSurface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       content: SizedBox(
         width: double.maxFinite,
@@ -793,46 +777,48 @@ class _QrPaymentDialogBodyState extends State<_QrPaymentDialogBody> {
           children: [
             Text(
               widget.title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: context.appText,
+              ),
             ),
             const SizedBox(height: 20),
+            // QR needs a white background in both themes so it can be scanned
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
+                color: Colors.white,
                 border: Border.all(color: widget.rowBorder),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: widget.isCashOnDelivery
-                  ? QrImageView(
-                      data: widget.qrData,
-                      version: QrVersions.auto,
-                      size: 200,
-                      backgroundColor: Colors.white,
-                      errorCorrectionLevel: QrErrorCorrectLevel.H,
-                    )
-                  : Image.asset(
-                      'assets/image/qrkh_payment.jpg',
-                      width: 220,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => QrImageView(
-                        data: widget.qrData,
-                        version: QrVersions.auto,
-                        size: 200,
-                        backgroundColor: Colors.white,
-                        errorCorrectionLevel: QrErrorCorrectLevel.H,
-                      ),
-                    ),
+              child: Image.asset(
+                'assets/image/qrkh_payment.jpg',
+                width: 220,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => QrImageView(
+                  data: widget.qrData,
+                  version: QrVersions.auto,
+                  size: 200,
+                  backgroundColor: Colors.white,
+                  errorCorrectionLevel: QrErrorCorrectLevel.H,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             Text(
               '\$${widget.total.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: context.appText,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               widget.subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(fontSize: 12, color: context.appMuted),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -855,9 +841,10 @@ class _QrPaymentDialogBodyState extends State<_QrPaymentDialogBody> {
                   ),
                   Text(
                     '$_secondsLeft',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
+                      color: context.appText,
                     ),
                   ),
                 ],
@@ -865,11 +852,9 @@ class _QrPaymentDialogBodyState extends State<_QrPaymentDialogBody> {
             ),
             const SizedBox(height: 12),
             Text(
-              widget.isCashOnDelivery
-                  ? 'Confirming your order automatically in $_secondsLeft s'
-                  : 'Confirming payment automatically in $_secondsLeft s',
+              'Confirming payment automatically in $_secondsLeft s',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(fontSize: 12, color: context.appMuted),
             ),
           ],
         ),

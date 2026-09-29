@@ -1,15 +1,18 @@
 part of 'shop_bloc.dart';
+
 class ShopState {
   final List<ProductModel> allproduct;
   final List<ProductModel> filltercategory;
   final List<ProductModel> favorites;
   final List<ProductModel> cart;
+  final List<OrderModel> orders;
   final ProductModel? selectedProduct; // for detail screen
   ShopState({
     this.allproduct = const [],
     this.filltercategory = const [],
     this.favorites = const [],
     this.cart = const [],
+    this.orders = const [],
     this.selectedProduct,
   });
   ShopState copy({
@@ -17,6 +20,7 @@ class ShopState {
     List<ProductModel>? filltercategory,
     List<ProductModel>? favorites,
     List<ProductModel>? cart,
+    List<OrderModel>? orders,
     ProductModel? selectedProduct,
     bool clearSelected = false,
   }) {
@@ -25,6 +29,7 @@ class ShopState {
       filltercategory: filltercategory ?? this.filltercategory,
       favorites: favorites ?? this.favorites,
       cart: cart ?? this.cart,
+      orders: orders ?? this.orders,
       selectedProduct: clearSelected ? null : (selectedProduct ?? this.selectedProduct),
     );
   }

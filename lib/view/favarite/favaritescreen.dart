@@ -1,40 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:get/utils.dart';
-import 'package:shop/Mainhomepage.dart';
+import 'package:shop/mod/appcolor.dart';
 import 'package:shop/bloc/shop_bloc.dart';
 import 'package:shop/view/home/detailscreen.dart';
-import 'package:shop/view/home/homescreen.dart';
+
 class Favaritescreen extends StatelessWidget {
-  const Favaritescreen({super.key});
-  static const Color pageBackground = Color(0xFFFFFFFF);
-  static const Color cardGrey = Color(0xFFEDEDED);
+  const Favaritescreen({super.key, this.onBack});
+
+  /// Called when the back arrow is tapped (switches Mainhomepage to Home tab)
+  final VoidCallback? onBack;
+
   static const Color badgeGreen = Color(0xFF3ECD5E);
   static const Color priceRed = Color(0xFFFF3B6B);
-  static const Color oldPriceGrey = Color(0xFF6B6B6B);
   static const Color starYellow = Color(0xFFFFC107);
-  static const Color textDark = Color(0xFF1C1C1C);
+
+  void _goHome(BuildContext context) {
+    if (onBack != null) {
+      onBack!(); // switch Mainhomepage to Home tab
+    } else {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ShopBloc, ShopState>(
       builder: (context, state) {
         final favorites = state.favorites;
+
+        final Color pageBg = context.appPageBg;
+        final Color textDark = context.appText;
+        final Color muted = context.appMuted;
+
         return Scaffold(
-          backgroundColor: pageBackground,
+          backgroundColor: pageBg,
           appBar: AppBar(
-            backgroundColor: pageBackground,
+            backgroundColor: pageBg,
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             scrolledUnderElevation: 0,
             centerTitle: true,
-            leading: IconButton(
-              onPressed: () => Get.offAll(() => const Mainhomepage()),
-              icon: const Icon(Icons.arrow_back, color: textDark, size: 28),
+            automaticallyImplyLeading: false,
+            leading: GestureDetector(
+              onTap: () => _goHome(context),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Icon(Icons.arrow_back, color: textDark, size: 24),
+              ),
             ),
             title: Text(
               'Save item(${favorites.length})',
-              style: const TextStyle(
+              style: TextStyle(
                 color: textDark,
                 fontWeight: FontWeight.w800,
                 fontSize: 20,
@@ -42,15 +59,16 @@ class Favaritescreen extends StatelessWidget {
             ),
           ),
           body: favorites.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'No saved items yet',
-                    style: TextStyle(color: Colors.black54, fontSize: 16),
+                    style: TextStyle(color: muted, fontSize: 16),
                   ),
                 )
               : GridView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
@@ -69,8 +87,9 @@ class Favaritescreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: Colors.grey),
+                            color: context.appSurface,
+                            border:
+                                Border.all(color: context.appStrongBorder),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Column(
@@ -94,7 +113,7 @@ class Favaritescreen extends StatelessWidget {
                                       product.name,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         height: 1.2,
                                         color: textDark,
@@ -102,23 +121,17 @@ class Favaritescreen extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(
-                                    Icons.star,
-                                    color: starYellow,
-                                    size: 16,
-                                  ),
+                                  const Icon(Icons.star,
+                                      color: starYellow, size: 16),
                                   const SizedBox(width: 2),
                                   Text(
                                     product.rate.toString(),
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: textDark,
-                                    ),
+                                    style: TextStyle(
+                                        fontSize: 14, color: textDark),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              // Prices
                               Row(
                                 children: [
                                   Text(
@@ -132,16 +145,16 @@ class Favaritescreen extends StatelessWidget {
                                   const SizedBox(width: 8),
                                   Text(
                                     '\$${originalPrice.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      color: oldPriceGrey,
+                                    style: TextStyle(
+                                      color: muted,
                                       fontSize: 12,
-                                      decoration: TextDecoration.lineThrough,
+                                      decoration:
+                                          TextDecoration.lineThrough,
                                     ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 10),
-                              // Add to cart
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
@@ -155,9 +168,8 @@ class Favaritescreen extends StatelessWidget {
                                     );
                                   },
                                   icon: const Icon(
-                                    Icons.shopping_cart_outlined,
-                                    size: 14,
-                                  ),
+                                      Icons.shopping_cart_outlined,
+                                      size: 14),
                                   label: const Text(
                                     'Add to cart',
                                     style: TextStyle(
@@ -166,16 +178,14 @@ class Favaritescreen extends StatelessWidget {
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: context.appSurface,
                                     foregroundColor: textDark,
                                     elevation: 0,
                                     minimumSize: const Size(0, 34),
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                    side: const BorderSide(
-                                      color: Color(0xFFDADADA),
-                                    ),
+                                        horizontal: 14),
+                                    side:
+                                        BorderSide(color: context.appBorder),
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                     shape: const StadiumBorder(),
@@ -185,16 +195,12 @@ class Favaritescreen extends StatelessWidget {
                             ],
                           ),
                         ),
-
-                        // Discount badge
                         Positioned(
                           top: 8,
                           left: 8,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
+                                horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: badgeGreen,
                               borderRadius: BorderRadius.circular(8),
@@ -209,21 +215,17 @@ class Favaritescreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // Heart (tap to remove from saved items)
                         Positioned(
                           top: 2,
                           right: 2,
                           child: IconButton(
                             onPressed: () {
-                              context.read<ShopBloc>().add(
-                                ToggleFavorite(product),
-                              );
+                              context
+                                  .read<ShopBloc>()
+                                  .add(ToggleFavorite(product));
                             },
-                            icon: const Icon(
-                              Icons.favorite_border,
-                              color: Colors.black54,
-                              size: 24,
-                            ),
+                            icon: Icon(Icons.favorite_border,
+                                color: muted, size: 24),
                           ),
                         ),
                       ],

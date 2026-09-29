@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:shop/Model/ordermodel.dart';
 import 'package:shop/Model/productmodel.dart';
 import 'package:shop/controller/productcontroller.dart';
 part 'shop_event.dart';
@@ -15,6 +16,7 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     on<AddToCart>(onAddToCart);
     on<RemoveFromCart>(onRemoveFromCart);
     on<UpdateCartQuantity>(onUpdateCartQuantity);
+    on<PlaceOrder>(onPlaceOrder);
   }
   void onProduct(LoadProduct event, Emitter<ShopState> emit) {
     emit(
@@ -85,5 +87,11 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     }).toList();
 
     emit(state.copy(cart: updatedCart));
+  }
+  // Records the order in history and clears the cart in a single emit,
+  // so there's no window where the cart is empty but the order wasn't saved.
+  void onPlaceOrder(PlaceOrder event, Emitter<ShopState> emit) {
+    final updatedOrders = [event.order, ...state.orders];
+    emit(state.copy(orders: updatedOrders, cart: const []));
   }
 }

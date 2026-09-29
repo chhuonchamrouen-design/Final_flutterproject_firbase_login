@@ -1,100 +1,73 @@
 import 'package:flutter/material.dart';
-import 'package:shop/view/cart/cartscreen.dart';
+import 'package:shop/mod/appcolor.dart';
+import 'package:shop/view/History/OrderHistorScreen.dart';
 import 'package:shop/view/favarite/favaritescreen.dart';
 import 'package:shop/view/home/homescreen.dart';
 import 'package:shop/view/profile/profilescreen.dart';
-import 'package:shop/view/search/searchscreen.dart';
+
 class Mainhomepage extends StatefulWidget {
   const Mainhomepage({super.key});
+
   @override
   State<Mainhomepage> createState() => _MainhomepageState();
 }
+
 class _MainhomepageState extends State<Mainhomepage> {
-  int currentpage = 0;
-  final List<Widget> pages = const [
-    Homescreen(),
-    Searchscreen(),
-    Favaritescreen(),
-    CartScreen(),
-    ProfileScreen(),
+  int _currentIndex = 0;
+
+  /// Switch the bottom nav to the Home tab (index 0)
+  void _goHomeTab() {
+    setState(() => _currentIndex = 0);
+  }
+
+  late final List<Widget> _pages = [
+    // 0 — Home
+    const Homescreen(),
+
+    // 1 — Favorites
+    Favaritescreen(onBack: _goHomeTab),
+
+    // 2 — Order History
+    OrderHistoryScreen(onBack: _goHomeTab),
+
+    // 3 — Profile  ← the fix
+    ProfileScreen(onBack: _goHomeTab),
   ];
-  static const Color _activeColor = Color(0xFF34C759); // green
-  static const Color _inactiveColor = Colors.black45;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages[currentpage],
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          color: Colors.white,
-          padding: const EdgeInsets.only(top: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _navItem(icon: Icons.home_outlined, label: 'Home', index: 0),
-                  _navItem(icon: Icons.search, label: 'Search', index: 1),
-                  _navItem(
-                    icon: Icons.favorite_border,
-                    label: 'Saved',
-                    index: 2,
-                  ),
-                  _navItem(
-                    icon: Icons.shopping_bag_outlined,
-                    label: 'Cart',
-                    index: 3,
-                  ),
-                  _navItem(
-                    icon: Icons.person_outline,
-                    label: 'Account',
-                    index: 4,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              // ---- iOS-style home indicator bar ----
-              Container(
-                width: 120,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-        ),
+      backgroundColor: context.appPageBg,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
       ),
-    );
-  }
-
-  Widget _navItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
-    final bool isSelected = currentpage == index;
-    final Color color = isSelected ? _activeColor : _inactiveColor;
-
-    return GestureDetector(
-      onTap: () => setState(() => currentpage = index),
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: context.appSurface,
+        selectedItemColor: const Color(0xFF3ECD5E),
+        unselectedItemColor: context.appMuted,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite_border),
+            activeIcon: Icon(Icons.favorite),
+            label: 'Saved',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long),
+            label: 'Orders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),

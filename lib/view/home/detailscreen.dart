@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shop/Model/productmodel.dart';
-import 'package:shop/bloc/shop_bloc.dart'; // adjust path if needed
-import 'package:shop/view/cart/cartscreen.dart'; // adjust to your CartScreen file path
+import 'package:shop/mod/appcolor.dart'; // <-- file that contains "extension Appcolor"
+import 'package:shop/bloc/shop_bloc.dart';
+import 'package:shop/view/cart/cartscreen.dart';
+
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key});
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
+
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int quantity = 1;
   int selectedIndex = 0;
-  static const Color greyBackground = Color(0xFFFFFFFF);
-  static const Color greyPill = Color(0xFFEDEDED);
+
+  // theme-aware colors
+  Color get greyBackground => context.appPageBg;
+  Color get greyPill => context.appPanel;
   static const Color greenButton = Color(0xFF3ECD5E);
   static const Color greenAccent = Color(0xFF3ECD5E);
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ShopBloc, ShopState>(
@@ -71,7 +77,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               () => context.read<ShopBloc>().add(
                                 ToggleFavorite(product),
                               ),
-                              color: isFavorite ? Colors.red : Colors.black87,
+                              color: isFavorite ? Colors.red : null,
                             ),
                             const SizedBox(width: 4),
                             _cartButton(context),
@@ -80,7 +86,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ],
                     ),
                   ),
-                  // ---------- Main image with arrows (radius 20) ----------
+                  // main image
                   SizedBox(
                     height: 280,
                     child: Container(
@@ -139,8 +145,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-
-                  // ---------- Thumbnails ----------
                   if (allImages.length > 1)
                     SizedBox(
                       height: 64,
@@ -161,11 +165,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               height: 60,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
-                                color: Colors.white,
+                                color: context.appSurface,
                                 border: Border.all(
                                   color: isSelected
                                       ? greenAccent
-                                      : const Color(0xFFE3E3E3),
+                                      : context.appBorder,
                                   width: 2,
                                 ),
                               ),
@@ -186,13 +190,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                     ),
                   const SizedBox(height: 20),
-
                   // ---------- Bottom card ----------
                   Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: greyPill,
-                      borderRadius: BorderRadius.only(
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(36),
                         topRight: Radius.circular(36),
                       ),
@@ -204,23 +207,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         // Name + Quantity
                         Row(
                           children: [
-                            const CircleAvatar(
+                            CircleAvatar(
                               radius: 13,
-                              backgroundColor: Colors.black,
+                              backgroundColor: context.appText,
                               child: Icon(
                                 Icons.apple,
                                 size: 16,
-                                color: Colors.white,
+                                color: greyPill,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 product.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w700,
-                                  color: Colors.black,
+                                  color: context.appText,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -231,7 +234,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.black26),
+                                border: Border.all(
+                                  color: context.appStrongBorder,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -247,9 +252,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     ),
                                     child: Text(
                                       '$quantity',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
+                                        color: context.appText,
                                       ),
                                     ),
                                   ),
@@ -268,23 +274,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           children: [
                             Text(
                               product.rate,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.black,
+                                color: context.appText,
                               ),
                             ),
                             const SizedBox(width: 6),
-                            const Icon(
+                            Icon(
                               Icons.star_border,
                               size: 20,
-                              color: Colors.black87,
+                              color: context.appText,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               '(${product.view})',
-                              style: const TextStyle(
-                                color: Colors.black54,
+                              style: TextStyle(
+                                color: context.appMuted,
                                 fontSize: 13,
                               ),
                             ),
@@ -297,8 +303,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           children: [
                             Text(
                               '\$${product.oldprice.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: Colors.black54,
+                              style: TextStyle(
+                                color: context.appMuted,
                                 decoration: TextDecoration.lineThrough,
                                 fontSize: 15,
                               ),
@@ -306,10 +312,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             const SizedBox(width: 10),
                             Text(
                               '\$${newPrice.toStringAsFixed(2)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: context.appText,
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -339,12 +345,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         // ---------- Storage + Color ----------
                         Row(
                           children: [
-                            const Text(
+                            Text(
                               'Storage',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black,
+                                color: context.appText,
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -352,24 +358,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             const SizedBox(width: 16),
                             Text(
                               'colors: ${product.color}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black,
+                                color: context.appText,
                               ),
                             ),
                           ],
                         ),
 
                         const SizedBox(height: 22),
-
-                        // Specifications (from detail_sp)
-                        const Text(
+                        // Specifications
+                        Text(
                           'Specifications',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: Colors.black,
+                            color: context.appText,
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -390,14 +395,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                         ),
                         const SizedBox(height: 22),
-
-                        // ---------- Description (expandable) ----------
+                        // Description
                         _ExpandableDescription(
                           description: product.description,
                         ),
 
                         const SizedBox(height: 22),
-                        // ---------- Category you may like ----------
+                        // Category you may like
                         _YouMayLikeSection(currentProduct: product),
                       ],
                     ),
@@ -562,17 +566,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Text(text, style: const TextStyle(fontSize: 13)),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 13, color: context.appText),
+      ),
     );
   }
 
   Widget _circleIconButton(
     IconData icon,
     VoidCallback onTap, {
-    Color color = Colors.black87,
+    Color? color,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -580,7 +587,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         width: 40,
         height: 40,
         decoration: const BoxDecoration(shape: BoxShape.circle),
-        child: Icon(icon, color: color, size: 22),
+        child: Icon(icon, color: color ?? context.appText, size: 22),
       ),
     );
   }
@@ -607,7 +614,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         width: 22,
         height: 22,
         alignment: Alignment.center,
-        child: Icon(icon, size: 16, color: Colors.black87),
+        child: Icon(icon, size: 16, color: context.appText),
       ),
     );
   }
@@ -618,6 +625,7 @@ class _SpecItem extends StatelessWidget {
   final IconData icon;
   final String title;
   const _SpecItem({required this.icon, required this.title});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -625,11 +633,11 @@ class _SpecItem extends StatelessWidget {
         Container(
           width: 48,
           height: 48,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: context.appSurface,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 22, color: Colors.black87),
+          child: Icon(icon, size: 22, color: context.appText),
         ),
         const SizedBox(height: 6),
         Text(
@@ -637,10 +645,10 @@ class _SpecItem extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: context.appText,
           ),
         ),
       ],
@@ -665,27 +673,20 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title
-        const Text(
+        Text(
           'Description',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Colors.black,
+            color: context.appText,
           ),
         ),
         const SizedBox(height: 8),
-
-        // Body + Read more toggle
         LayoutBuilder(
           builder: (context, constraints) {
             final textSpan = TextSpan(
               text: widget.description,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black87,
-                height: 1.45,
-              ),
+              style: const TextStyle(fontSize: 13, height: 1.45),
             );
 
             final textPainter = TextPainter(
@@ -704,14 +705,12 @@ class _ExpandableDescriptionState extends State<_ExpandableDescription> {
                   overflow: _isExpanded
                       ? TextOverflow.visible
                       : TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Colors.black87,
+                    color: context.appText,
                     height: 1.45,
                   ),
                 ),
-
-                // 👇 Read more / Read less aligned to the RIGHT
                 if (isOverflowing)
                   Align(
                     alignment: Alignment.centerRight,
@@ -778,12 +777,12 @@ class _YouMayLikeSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Category you may like',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: Colors.black,
+                color: context.appText,
               ),
             ),
             const SizedBox(height: 14),
@@ -805,9 +804,9 @@ class _YouMayLikeSection extends StatelessWidget {
                       width: 240,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.appSurface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.black),
+                        border: Border.all(color: context.appStrongBorder),
                       ),
                       child: Row(
                         children: [
@@ -834,9 +833,10 @@ class _YouMayLikeSection extends StatelessWidget {
                                   item.name,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
+                                    color: context.appText,
                                   ),
                                 ),
                                 const SizedBox(height: 4),

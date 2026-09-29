@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
 import 'package:shop/Model/productmodel.dart';
+import 'package:shop/mod/appcolor.dart'; // <-- file that contains "extension Appcolor"
 import 'package:shop/bloc/shop_bloc.dart';
 import 'package:shop/view/home/detailscreen.dart';
-import 'package:shop/view/cart/cartscreen.dart'; // adjust to your CartScreen file path
+import 'package:shop/view/cart/cartscreen.dart';
 
-const Color _pageBg = Color(0xFFFFFFFF); // page background (white)
-const Color _cardBg = Color(0xFFEDEDED); // product card (light grey)
-const Color _badgeBg = Color(0xFF3ECD5E); // discount badge (green)
-const Color _priceColor = Color(0xFFFF3B6B); // sale price
-const Color _seeAllBg = Color(0xFF3ECD5E); // "See all" pill (green)
-const Color _chipSelectedBorder = Color(0xFF000000);
-const Color _searchBorder = Color(0xFFE3E3E3);
+const Color _badgeBg = Color(0xFF3ECD5E);
+const Color _priceColor = Color(0xFFFF3B6B);
+const Color _seeAllBg = Color(0xFF3ECD5E);
 
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
@@ -22,11 +19,11 @@ class Homescreen extends StatefulWidget {
 
 class _HomescreenState extends State<Homescreen> {
   int selectedCategoryIndex = 0;
-  // ---------- search ----------
+  //use for sewarch
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
   static const List<String> _categoryImages = [
-    '', // "All"
+    '',
     'assets/image/apple.jpg',
     'assets/image/samsung.jpg',
     'assets/image/vivo.jpg',
@@ -46,6 +43,7 @@ class _HomescreenState extends State<Homescreen> {
     'assets/image/nn.png',
     'assets/image/xx.png',
   ];
+
   @override
   void initState() {
     super.initState();
@@ -75,7 +73,7 @@ class _HomescreenState extends State<Homescreen> {
     FocusScope.of(context).unfocus();
   }
 
-  // Filters the (already category-filtered) product list by name.
+  //fitter for catecory
   List<ProductModel> _applySearch(List<ProductModel> products) {
     final query = _searchQuery.trim().toLowerCase();
     if (query.isEmpty) return products;
@@ -85,7 +83,7 @@ class _HomescreenState extends State<Homescreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _pageBg,
+      backgroundColor: context.appPageBg,
       appBar: _buildAppBar(context),
       body: BlocBuilder<ShopBloc, ShopState>(
         builder: (context, state) {
@@ -108,19 +106,19 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
-  // ---------------- App bar ----------------
+  //app bar
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      title: const Text(
+      title: Text(
         'Phone shop',
         style: TextStyle(
-          color: Colors.black,
+          color: context.appText,
           fontWeight: FontWeight.bold,
           fontSize: 20,
         ),
       ),
       centerTitle: true,
-      backgroundColor: _pageBg,
+      backgroundColor: context.appPageBg,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -128,7 +126,7 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
-  // ---------------- Cart button (badge + navigate), same behavior as detail screen ----------------
+  // ---------------- Cart button (badge + navigate) ----------------
   Widget _cartButton(BuildContext context) {
     return BlocBuilder<ShopBloc, ShopState>(
       buildWhen: (previous, current) => previous.cart != current.cart,
@@ -139,9 +137,9 @@ class _HomescreenState extends State<Homescreen> {
           children: [
             IconButton(
               onPressed: () => _openCart(context),
-              icon: const Icon(
+              icon: Icon(
                 Icons.shopping_cart,
-                color: Colors.black,
+                color: context.appText,
                 size: 28,
               ),
             ),
@@ -187,7 +185,7 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
-  // ---------------- Search bar + avatar ----------------
+  // ---------------- Search bar ----------------
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
@@ -198,43 +196,42 @@ class _HomescreenState extends State<Homescreen> {
               height: 46,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: Colors.white,
-                border: Border.all(color: _searchBorder),
+                color: context.appSurface,
+                border: Border.all(color: context.appBorder),
               ),
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: _onSearchChanged,
                 textInputAction: TextInputAction.search,
-                style: const TextStyle(fontSize: 17),
+                style: TextStyle(fontSize: 17, color: context.appText),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(
+                  filled: false,
+                  prefixIcon: Icon(
                     Icons.search,
-                    color: Colors.black54,
+                    color: context.appMuted,
                     size: 26,
                   ),
                   suffixIcon: _searchQuery.isEmpty
                       ? null
                       : IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.close,
-                            color: Colors.black54,
+                            color: context.appMuted,
                             size: 20,
                           ),
                           onPressed: _clearSearch,
                         ),
                   hintText: 'Search',
-                  hintStyle: const TextStyle(
-                    color: Colors.black54,
-                    fontSize: 16,
-                  ),
+                  hintStyle: TextStyle(color: context.appMuted, fontSize: 16),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          // Placeholder avatar – swap the child for Image.asset(...) if you have one.
           const CircleAvatar(
             radius: 23,
             backgroundColor: Color(0xFFF5D6C6),
@@ -286,10 +283,10 @@ class _HomescreenState extends State<Homescreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Category',
             style: TextStyle(
-              color: Colors.black,
+              color: context.appText,
               fontWeight: FontWeight.bold,
               fontSize: 20,
             ),
@@ -341,15 +338,18 @@ class _HomescreenState extends State<Homescreen> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(21),
-                  color: isSelected ? Colors.green : Colors.white,
-                  border: Border.all(color: Colors.grey, width: 1.5),
+                  color: isSelected ? Colors.green : context.appSurface,
+                  border: Border.all(
+                    color: context.appStrongBorder,
+                    width: 1.5,
+                  ),
                 ),
                 child: Text(
                   label,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    color: isSelected ? Colors.white : Colors.black,
+                    color: isSelected ? Colors.white : context.appText,
                   ),
                 ),
               ),
@@ -373,6 +373,7 @@ class _HomescreenState extends State<Homescreen> {
               ? 'No products found'
               : 'No results for "$_searchQuery"',
           textAlign: TextAlign.center,
+          style: TextStyle(color: context.appMuted),
         ),
       );
     }
@@ -392,7 +393,6 @@ class _HomescreenState extends State<Homescreen> {
           final product = products[index];
           return _ProductCard(
             product: product,
-            // compare by code, not object identity
             isFavorite: favorites.any((p) => p.code == product.code),
             onToggleFavorite: () =>
                 context.read<ShopBloc>().add(ToggleFavorite(product)),
@@ -414,6 +414,7 @@ class _ProductCard extends StatelessWidget {
     required this.isFavorite,
     required this.onToggleFavorite,
   });
+
   void _openDetail(BuildContext context) {
     context.read<ShopBloc>().add(SelectProduct(product));
     Navigator.push(
@@ -432,8 +433,8 @@ class _ProductCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey),
+          color: context.appSurface,
+          border: Border.all(color: context.appStrongBorder),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -484,7 +485,7 @@ class _ProductCard extends StatelessWidget {
                         child: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
                           size: 24,
-                          color: isFavorite ? Colors.red : Colors.black54,
+                          color: isFavorite ? Colors.red : context.appMuted,
                         ),
                       ),
                     ),
@@ -503,10 +504,11 @@ class _ProductCard extends StatelessWidget {
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       height: 1.2,
                       fontWeight: FontWeight.w500,
+                      color: context.appText,
                     ),
                   ),
                 ),
@@ -515,9 +517,10 @@ class _ProductCard extends StatelessWidget {
                 const SizedBox(width: 2),
                 Text(
                   product.rate,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: context.appText,
                   ),
                 ),
               ],
@@ -537,8 +540,8 @@ class _ProductCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   '\$${oldPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.black45,
+                  style: TextStyle(
+                    color: context.appMuted,
                     fontSize: 12,
                     decoration: TextDecoration.lineThrough,
                   ),
@@ -553,11 +556,11 @@ class _ProductCard extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => _openDetail(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+                  backgroundColor: context.appSurface,
+                  foregroundColor: context.appText,
                   elevation: 0,
                   padding: EdgeInsets.zero,
-                  side: const BorderSide(color: Color(0xFFDADADA)),
+                  side: BorderSide(color: context.appBorder),
                   shape: const StadiumBorder(),
                 ),
                 child: const Row(
